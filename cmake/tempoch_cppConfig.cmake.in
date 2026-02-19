@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# Include the targets file
+include("${CMAKE_CURRENT_LIST_DIR}/tempoch_cppTargets.cmake")
+
+# Provide the tempoch_ffi library location for runtime linking
+set(TEMPOCH_FFI_LIBRARY "@PACKAGE_CMAKE_INSTALL_PREFIX@/lib/@CMAKE_SHARED_LIBRARY_PREFIX@tempoch_ffi@CMAKE_SHARED_LIBRARY_SUFFIX@")
+
+check_required_components(tempoch_cpp)
