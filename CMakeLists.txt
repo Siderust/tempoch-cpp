@@ -41,7 +41,9 @@ endif()
 # Build tempoch-ffi via Cargo
 add_custom_target(
     build_tempoch_ffi
-    COMMAND ${CARGO_BIN} build --release ${_TEMPOCH_FEATURES_ARGS}
+    COMMAND ${CMAKE_COMMAND} -E env
+            CARGO_TARGET_DIR=${TEMPOCH_FFI_DIR}/target
+            ${CARGO_BIN} build --release ${_TEMPOCH_FEATURES_ARGS}
     WORKING_DIRECTORY ${TEMPOCH_FFI_DIR}
     BYPRODUCTS ${TEMPOCH_LIBRARY_PATH}
     COMMENT "Building tempoch-ffi library via Cargo"
