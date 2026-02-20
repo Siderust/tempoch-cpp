@@ -34,6 +34,12 @@ class Period {
     tempoch_period_mjd_t m_inner;
 
 public:
+    /**
+     * @brief Construct a period from start/end MJD values.
+     * @param start_mjd Inclusive start instant, in MJD days.
+     * @param end_mjd Inclusive end instant, in MJD days.
+     * @throws InvalidPeriodError If @p start_mjd is greater than @p end_mjd.
+     */
     Period(double start_mjd, double end_mjd) {
         check_status(
             tempoch_period_mjd_new(start_mjd, end_mjd, &m_inner),
@@ -41,6 +47,11 @@ public:
         );
     }
 
+    /**
+     * @brief Construct a period from typed MJD values.
+     * @param start Inclusive start instant.
+     * @param end Inclusive end instant.
+     */
     Period(const MJD& start, const MJD& end)
         : Period(start.value(), end.value()) {}
 
@@ -51,17 +62,29 @@ public:
         return p;
     }
 
+    /// Inclusive period start as raw MJD days.
     double start_mjd() const { return m_inner.start_mjd; }
-    double end_mjd()   const { return m_inner.end_mjd; }
-    MJD    start()     const { return MJD(m_inner.start_mjd); }
-    MJD    end()       const { return MJD(m_inner.end_mjd); }
+
+    /// Inclusive period end as raw MJD days.
+    double end_mjd() const { return m_inner.end_mjd; }
+
+    /// Inclusive period start as a typed MJD value.
+    MJD start() const { return MJD(m_inner.start_mjd); }
+
+    /// Inclusive period end as a typed MJD value.
+    MJD end() const { return MJD(m_inner.end_mjd); }
 
     /// Duration in days.
     double duration_days() const {
         return tempoch_period_mjd_duration_days(m_inner);
     }
 
-    /// Intersection with another period. Throws if no overlap.
+    /**
+     * @brief Compute the overlapping interval with another period.
+     * @param other The period to intersect with.
+     * @return The overlap interval.
+     * @throws NoIntersectionError If the two periods do not overlap.
+     */
     Period intersection(const Period& other) const {
         tempoch_period_mjd_t out;
         check_status(
@@ -71,7 +94,7 @@ public:
         return from_c(out);
     }
 
-    /// Access the underlying C struct.
+    /// Access the underlying FFI POD value.
     const tempoch_period_mjd_t& c_inner() const { return m_inner; }
 };
 

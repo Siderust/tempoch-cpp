@@ -26,16 +26,34 @@ namespace tempoch {
  * @endcode
  */
 struct UTC {
+    /// Gregorian year (astronomical year numbering).
     int32_t  year;
+    /// Month in range [1, 12].
     uint8_t  month;
+    /// Day of month in range [1, 31].
     uint8_t  day;
+    /// Hour in range [0, 23].
     uint8_t  hour;
+    /// Minute in range [0, 59].
     uint8_t  minute;
+    /// Second in range [0, 60], leap second aware.
     uint8_t  second;
+    /// Nanosecond component in range [0, 999,999,999].
     uint32_t nanosecond;
 
+    /// Default constructor: J2000 epoch noon-like civil representation.
     UTC() : year(2000), month(1), day(1), hour(12), minute(0), second(0), nanosecond(0) {}
 
+    /**
+     * @brief Construct from civil UTC components.
+     * @param y Year.
+     * @param mo Month [1, 12].
+     * @param d Day [1, 31].
+     * @param h Hour [0, 23].
+     * @param mi Minute [0, 59].
+     * @param s Second [0, 60].
+     * @param ns Nanoseconds [0, 999,999,999].
+     */
     UTC(int32_t y, uint8_t mo, uint8_t d,
         uint8_t h = 0, uint8_t mi = 0, uint8_t s = 0, uint32_t ns = 0)
         : year(y), month(mo), day(d), hour(h), minute(mi), second(s), nanosecond(ns) {}
