@@ -1,5 +1,6 @@
 /**
  * @file time_example.cpp
+ * @example time_example.cpp
  * @brief Demonstrates the tempoch C++ API.
  *
  * Build and run:
