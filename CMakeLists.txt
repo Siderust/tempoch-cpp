@@ -4,6 +4,7 @@ project(tempoch_cpp VERSION 0.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+option(TEMPOCH_BUILD_DOCS "Enable Doxygen documentation target." ON)
 
 # Find Cargo for building Rust library
 find_program(CARGO_BIN cargo REQUIRED)
@@ -68,6 +69,26 @@ target_include_directories(tempoch_cpp INTERFACE
 target_link_libraries(tempoch_cpp INTERFACE tempoch_ffi)
 add_dependencies(tempoch_cpp build_tempoch_ffi)
 
+# Doxygen documentation
+if(TEMPOCH_BUILD_DOCS)
+    find_package(Doxygen QUIET)
+    if(DOXYGEN_FOUND)
+        set(TEMPOCH_DOXYFILE_IN  ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in)
+        set(TEMPOCH_DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.tempoch_cpp)
+        configure_file(${TEMPOCH_DOXYFILE_IN} ${TEMPOCH_DOXYFILE_OUT} @ONLY)
+
+        add_custom_target(docs
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen
+            COMMAND ${DOXYGEN_EXECUTABLE} ${TEMPOCH_DOXYFILE_OUT}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Generating API documentation with Doxygen"
+            VERBATIM
+        )
+    else()
+        message(STATUS "Doxygen not found; 'docs' target will not be available")
+    endif()
+endif()
+
 # Set RPATH for runtime library location
 if(APPLE)
     set(_tempoch_rpath "@loader_path/../tempoch/tempoch-ffi/target/release")
@@ -119,7 +140,9 @@ endif()
 
 # Add tests to CTest
 include(GoogleTest)
-gtest_discover_tests(test_tempoch)
+gtest_discover_tests(test_tempoch
+    PROPERTIES LABELS "tempoch_cpp"
+)
 
 endif() # CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
 
