@@ -59,6 +59,9 @@ if(WIN32)
 endif()
 add_dependencies(tempoch_ffi build_tempoch_ffi)
 
+# qtty-cpp integration (provides unit types for duration<>)
+add_subdirectory(qtty-cpp)
+
 # Header-only C++ wrapper library
 add_library(tempoch_cpp INTERFACE)
 target_include_directories(tempoch_cpp INTERFACE
@@ -66,7 +69,7 @@ target_include_directories(tempoch_cpp INTERFACE
     $<BUILD_INTERFACE:${TEMPOCH_FFI_INCLUDE_DIR}>
     $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(tempoch_cpp INTERFACE tempoch_ffi)
+target_link_libraries(tempoch_cpp INTERFACE tempoch_ffi qtty_cpp)
 add_dependencies(tempoch_cpp build_tempoch_ffi)
 
 # Doxygen documentation
