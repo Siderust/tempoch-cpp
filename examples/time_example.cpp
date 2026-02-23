@@ -9,6 +9,7 @@
  */
 
 #include <tempoch/tempoch.hpp>
+#include <qtty/qtty.hpp>
 #include <iostream>
 #include <iomanip>
 
@@ -38,15 +39,31 @@ int main() {
     std::cout << "Centuries since J2000: " << jd.julian_centuries() << "\n\n";
 
     // ---------------------------------------------------------------
-    // Period intersection
+    // Period intersection (MJD — explicit MJD wrappers required)
     // ---------------------------------------------------------------
-    Period night(60200.0, 60200.5);
-    Period obs(60200.2, 60200.8);
+    Period night(MJD(60200.0), MJD(60200.5));
+    Period obs(MJD(60200.2), MJD(60200.8));
     auto overlap = night.intersection(obs);
     std::cout << "Night:   " << night << "\n";
     std::cout << "Obs:     " << obs << "\n";
     std::cout << "Overlap: " << overlap << "\n";
-    std::cout << "Overlap duration: " << overlap.duration_days() * 24.0 << " hours\n";
+    std::cout << "Overlap duration: " << overlap.duration<qtty::Hour>() << "\n\n";
+
+    // ---------------------------------------------------------------
+    // Period<UTC> — start/end expressed directly as civil UTC
+    // ---------------------------------------------------------------
+    Period utc_semester(UTC(2026, 1, 1), UTC(2026, 7, 1));
+    std::cout << "Semester (UTC): " << utc_semester << "\n";
+    std::cout << "  duration: " << utc_semester.duration() << "\n\n";
+
+    // ---------------------------------------------------------------
+    // Period<JulianDate> — start/end as Julian Dates
+    // ---------------------------------------------------------------
+    auto jd_start = JulianDate::from_utc(UTC(2026, 1, 1));
+    auto jd_end   = JulianDate::from_utc(UTC(2026, 7, 1));
+    Period jd_semester(jd_start, jd_end);
+    std::cout << "Semester (JD):  " << jd_semester << "\n";
+    std::cout << "  duration: " << jd_semester.duration() << "\n";
 
     return 0;
 }
