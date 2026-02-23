@@ -60,7 +60,9 @@ endif()
 add_dependencies(tempoch_ffi build_tempoch_ffi)
 
 # qtty-cpp integration (provides unit types for duration<>)
-add_subdirectory(qtty-cpp)
+if(NOT TARGET qtty_cpp)
+    add_subdirectory(qtty-cpp)
+endif()
 
 # Header-only C++ wrapper library
 add_library(tempoch_cpp INTERFACE)
