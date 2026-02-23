@@ -8,6 +8,8 @@
  */
 
 #include "ffi_core.hpp"
+#include <iomanip>
+#include <ostream>
 
 namespace tempoch {
 
@@ -139,6 +141,11 @@ public:
     bool operator>=(const JulianDate& o) const { return m_value >= o.m_value; }
 };
 
+/// Stream a JulianDate as its raw double value.
+inline std::ostream& operator<<(std::ostream& os, const JulianDate& jd) {
+    return os << jd.value();
+}
+
 // ============================================================================
 // MJD (Modified Julian Date)
 // ============================================================================
@@ -205,5 +212,25 @@ public:
     bool operator> (const MJD& o) const { return m_value >  o.m_value; }
     bool operator>=(const MJD& o) const { return m_value >= o.m_value; }
 };
+
+/// Stream a MJD as its raw double value.
+inline std::ostream& operator<<(std::ostream& os, const MJD& mjd) {
+    return os << mjd.value();
+}
+
+/// Stream a UTC date-time as YYYY-MM-DD HH:MM:SS[.nnnnnnnnn].
+inline std::ostream& operator<<(std::ostream& os, const UTC& u) {
+    const char prev_fill = os.fill();
+    os << u.year << '-'
+       << std::setfill('0') << std::setw(2) << static_cast<int>(u.month)  << '-'
+       << std::setw(2) << static_cast<int>(u.day)    << ' '
+       << std::setw(2) << static_cast<int>(u.hour)   << ':'
+       << std::setw(2) << static_cast<int>(u.minute) << ':'
+       << std::setw(2) << static_cast<int>(u.second);
+    if (u.nanosecond != 0)
+        os << '.' << std::setw(9) << u.nanosecond;
+    os.fill(prev_fill);
+    return os;
+}
 
 } // namespace tempoch

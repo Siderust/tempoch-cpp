@@ -8,6 +8,7 @@
  */
 
 #include "time.hpp"
+#include <ostream>
 #include <vector>
 
 namespace tempoch {
@@ -97,5 +98,10 @@ public:
     /// Access the underlying FFI POD value.
     const tempoch_period_mjd_t& c_inner() const { return m_inner; }
 };
+
+/// Stream a Period as [start_mjd, end_mjd].
+inline std::ostream& operator<<(std::ostream& os, const Period& p) {
+    return os << '[' << p.start_mjd() << ", " << p.end_mjd() << ']';
+}
 
 } // namespace tempoch
