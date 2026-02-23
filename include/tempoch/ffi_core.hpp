@@ -26,7 +26,7 @@ namespace tempoch {
  */
 class TempochException : public std::runtime_error {
 public:
-    explicit TempochException(const std::string& msg) : std::runtime_error(msg) {}
+  explicit TempochException(const std::string &msg) : std::runtime_error(msg) {}
 };
 
 /**
@@ -34,7 +34,7 @@ public:
  */
 class NullPointerError : public TempochException {
 public:
-    explicit NullPointerError(const std::string& msg) : TempochException(msg) {}
+  explicit NullPointerError(const std::string &msg) : TempochException(msg) {}
 };
 
 /**
@@ -42,7 +42,7 @@ public:
  */
 class UtcConversionError : public TempochException {
 public:
-    explicit UtcConversionError(const std::string& msg) : TempochException(msg) {}
+  explicit UtcConversionError(const std::string &msg) : TempochException(msg) {}
 };
 
 /**
@@ -50,7 +50,7 @@ public:
  */
 class InvalidPeriodError : public TempochException {
 public:
-    explicit InvalidPeriodError(const std::string& msg) : TempochException(msg) {}
+  explicit InvalidPeriodError(const std::string &msg) : TempochException(msg) {}
 };
 
 /**
@@ -58,7 +58,8 @@ public:
  */
 class NoIntersectionError : public TempochException {
 public:
-    explicit NoIntersectionError(const std::string& msg) : TempochException(msg) {}
+  explicit NoIntersectionError(const std::string &msg)
+      : TempochException(msg) {}
 };
 
 // ============================================================================
@@ -68,22 +69,24 @@ public:
 /**
  * @brief Check a tempoch_status_t and throw the appropriate exception on error.
  */
-inline void check_status(tempoch_status_t status, const char* operation) {
-    if (status == TEMPOCH_STATUS_T_OK) return;
+inline void check_status(tempoch_status_t status, const char *operation) {
+  if (status == TEMPOCH_STATUS_T_OK)
+    return;
 
-    std::string msg = std::string(operation) + " failed: ";
-    switch (status) {
-        case TEMPOCH_STATUS_T_NULL_POINTER:
-            throw NullPointerError(msg + "null output pointer");
-        case TEMPOCH_STATUS_T_UTC_CONVERSION_FAILED:
-            throw UtcConversionError(msg + "UTC conversion failed");
-        case TEMPOCH_STATUS_T_INVALID_PERIOD:
-            throw InvalidPeriodError(msg + "invalid period (start > end)");
-        case TEMPOCH_STATUS_T_NO_INTERSECTION:
-            throw NoIntersectionError(msg + "periods do not intersect");
-        default:
-            throw TempochException(msg + "unknown error (" + std::to_string(status) + ")");
-    }
+  std::string msg = std::string(operation) + " failed: ";
+  switch (status) {
+  case TEMPOCH_STATUS_T_NULL_POINTER:
+    throw NullPointerError(msg + "null output pointer");
+  case TEMPOCH_STATUS_T_UTC_CONVERSION_FAILED:
+    throw UtcConversionError(msg + "UTC conversion failed");
+  case TEMPOCH_STATUS_T_INVALID_PERIOD:
+    throw InvalidPeriodError(msg + "invalid period (start > end)");
+  case TEMPOCH_STATUS_T_NO_INTERSECTION:
+    throw NoIntersectionError(msg + "periods do not intersect");
+  default:
+    throw TempochException(msg + "unknown error (" + std::to_string(status) +
+                           ")");
+  }
 }
 
 } // namespace tempoch
