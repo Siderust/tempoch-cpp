@@ -80,13 +80,17 @@ if(TEMPOCH_BUILD_DOCS)
         set(TEMPOCH_DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.tempoch_cpp)
         configure_file(${TEMPOCH_DOXYFILE_IN} ${TEMPOCH_DOXYFILE_OUT} @ONLY)
 
-        add_custom_target(docs
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen
-            COMMAND ${DOXYGEN_EXECUTABLE} ${TEMPOCH_DOXYFILE_OUT}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-            COMMENT "Generating API documentation with Doxygen"
-            VERBATIM
-        )
+        if(NOT TARGET docs)
+            add_custom_target(docs
+                COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen
+                COMMAND ${DOXYGEN_EXECUTABLE} ${TEMPOCH_DOXYFILE_OUT}
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                COMMENT "Generating API documentation with Doxygen"
+                VERBATIM
+            )
+        else()
+            message(STATUS "Top-level 'docs' target already exists; skipping creation to avoid conflict with subprojects")
+        endif()
     else()
         message(STATUS "Doxygen not found; 'docs' target will not be available")
     endif()
