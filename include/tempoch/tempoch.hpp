@@ -20,5 +20,5 @@
  */
 
 #include "ffi_core.hpp"
-#include "time.hpp"
 #include "period.hpp"
+#include "time.hpp"
