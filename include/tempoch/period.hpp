@@ -150,9 +150,9 @@ template <typename T> Period(T, T) -> Period<T>;
 // Convenience type aliases
 // ============================================================================
 
-using MJDPeriod = Period<MJD>;          ///< Period expressed in Modified Julian Date.
-using JDPeriod  = Period<JulianDate>;   ///< Period expressed in Julian Date.
-using UTCPeriod = Period<CivilTime>;    ///< Period expressed in UTC civil time.
+using MJDPeriod = Period<MJD>; ///< Period expressed in Modified Julian Date.
+using JDPeriod = Period<JulianDate>; ///< Period expressed in Julian Date.
+using UTCPeriod = Period<CivilTime>; ///< Period expressed in UTC civil time.
 
 // ============================================================================
 // operator<<

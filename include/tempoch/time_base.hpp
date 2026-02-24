@@ -13,8 +13,8 @@
  *     for `Time<JDScale>` via SFINAE.
  */
 
-#include "scales.hpp"
 #include "qtty/qtty.hpp"
+#include "scales.hpp"
 #include <iomanip>
 #include <ostream>
 #include <type_traits>
@@ -36,12 +36,12 @@ namespace tempoch {
  * @endcode
  */
 struct CivilTime {
-  int32_t year;       ///< Gregorian year (astronomical year numbering).
-  uint8_t month;      ///< Month [1, 12].
-  uint8_t day;        ///< Day of month [1, 31].
-  uint8_t hour;       ///< Hour [0, 23].
-  uint8_t minute;     ///< Minute [0, 59].
-  uint8_t second;     ///< Second [0, 60] (leap-second aware).
+  int32_t year;        ///< Gregorian year (astronomical year numbering).
+  uint8_t month;       ///< Month [1, 12].
+  uint8_t day;         ///< Day of month [1, 31].
+  uint8_t hour;        ///< Hour [0, 23].
+  uint8_t minute;      ///< Minute [0, 59].
+  uint8_t second;      ///< Second [0, 60] (leap-second aware).
   uint32_t nanosecond; ///< Nanosecond [0, 999 999 999].
 
   /// Default constructor: J2000 epoch noon-like civil representation.
@@ -205,8 +205,7 @@ public:
    * auto t4 = mjd + 30.0_min;            // using qtty::literals
    * @endcode
    */
-  template <typename Q>
-  Time operator+(const qtty::Quantity<Q> &delta) const {
+  template <typename Q> Time operator+(const qtty::Quantity<Q> &delta) const {
     return Time(TimeScaleTraits<S>::add_days(
         m_days, delta.template to<qtty::DayTag>().value()));
   }
@@ -214,8 +213,7 @@ public:
   /**
    * @brief Retreat by a typed time quantity.
    */
-  template <typename Q>
-  Time operator-(const qtty::Quantity<Q> &delta) const {
+  template <typename Q> Time operator-(const qtty::Quantity<Q> &delta) const {
     return Time(TimeScaleTraits<S>::add_days(
         m_days, -delta.template to<qtty::DayTag>().value()));
   }
@@ -274,10 +272,8 @@ public:
 
   /// Convert to JulianDate.  Only available for `Time<MJDScale>`.
   template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, MJDScale>, Time<JDScale>>
-  to_jd() const {
-    return Time<JDScale>(
-        TimeConvertTraits<MJDScale, JDScale>::convert(m_days));
+  std::enable_if_t<std::is_same_v<U, MJDScale>, Time<JDScale>> to_jd() const {
+    return Time<JDScale>(TimeConvertTraits<MJDScale, JDScale>::convert(m_days));
   }
 };
 
