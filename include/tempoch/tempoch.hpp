@@ -22,7 +22,7 @@
  */
 
 #include "ffi_core.hpp"
-#include "scales.hpp"
-#include "time_base.hpp"
-#include "time.hpp"
 #include "period.hpp"
+#include "scales.hpp"
+#include "time.hpp"
+#include "time_base.hpp"

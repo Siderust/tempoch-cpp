@@ -13,7 +13,7 @@
  *  3. Specialise `TimeConvertTraits<A,B>` for each supported conversion pair.
  */
 
-#include "ffi_core.hpp"  // tempoch_ffi.h + check_status
+#include "ffi_core.hpp" // tempoch_ffi.h + check_status
 
 namespace tempoch {
 
