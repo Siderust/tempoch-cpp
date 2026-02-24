@@ -8,6 +8,10 @@
  * class template `Period<T>`.  The underlying storage is always
  * `tempoch_period_mjd_t`; `TimeTraits<T>` handles conversion to/from the raw
  * MJD doubles.
+ *
+ * `TimeTraits` specialisations for every `Time<S>` are provided automatically
+ * by `time_base.hpp`.  A manual `CivilTime` specialisation is kept here for
+ * `Period<CivilTime>` (i.e. `UTCPeriod`).
  */
 
 #include "qtty/qtty.hpp"
@@ -18,32 +22,18 @@
 namespace tempoch {
 
 // ============================================================================
-// TimeTraits — connect each time type to the MJD-based FFI layer
+// TimeTraits — CivilTime specialisation
 // ============================================================================
+// TimeTraits<Time<S>> for all scale-based types is already defined in
+// time_base.hpp.  We only need the CivilTime-specific one here.
 
-/**
- * @brief Conversion traits between a time type @p T and raw MJD doubles.
- *
- * Specialise this struct to make `Period<T>` work for a custom time type.
- * Each specialisation must provide:
- *   - `static double to_mjd_value(const T&)`
- *   - `static T      from_mjd_value(double)`
- */
-template <typename T> struct TimeTraits;
-
-template <> struct TimeTraits<MJD> {
-  static double to_mjd_value(const MJD &t) { return t.value(); }
-  static MJD from_mjd_value(double m) { return MJD(m); }
-};
-
-template <> struct TimeTraits<JulianDate> {
-  static double to_mjd_value(const JulianDate &t) { return t.to_mjd(); }
-  static JulianDate from_mjd_value(double m) { return MJD(m).to_jd(); }
-};
-
-template <> struct TimeTraits<UTC> {
-  static double to_mjd_value(const UTC &t) { return MJD::from_utc(t).value(); }
-  static UTC from_mjd_value(double m) { return MJD(m).to_utc(); }
+template <> struct TimeTraits<CivilTime> {
+  static double to_mjd_value(const CivilTime &t) {
+    return TimeScaleTraits<MJDScale>::from_civil(t);
+  }
+  static CivilTime from_mjd_value(double m) {
+    return TimeScaleTraits<MJDScale>::to_civil(m);
+  }
 };
 
 // ============================================================================
@@ -160,9 +150,9 @@ template <typename T> Period(T, T) -> Period<T>;
 // Convenience type aliases
 // ============================================================================
 
-using MJDPeriod = Period<MJD>; ///< Period expressed in Modified Julian Date.
-using JDPeriod = Period<JulianDate>; ///< Period expressed in Julian Date.
-using UTCPeriod = Period<UTC>;       ///< Period expressed in UTC civil time.
+using MJDPeriod = Period<MJD>;          ///< Period expressed in Modified Julian Date.
+using JDPeriod  = Period<JulianDate>;   ///< Period expressed in Julian Date.
+using UTCPeriod = Period<CivilTime>;    ///< Period expressed in UTC civil time.
 
 // ============================================================================
 // operator<<
