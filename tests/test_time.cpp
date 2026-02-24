@@ -114,3 +114,50 @@ TEST(Time, UtcToCRoundtrip) {
   EXPECT_EQ(utc2.second, 53);
   EXPECT_EQ(utc2.nanosecond, 589u);
 }
+
+// ============================================================================
+// Typed-quantity (_qty) methods
+// ============================================================================
+
+TEST(Time, JulianCenturiesQty) {
+  auto jd = JulianDate::J2000();
+  auto jc = jd.julian_centuries_qty();
+  EXPECT_NEAR(jc.value(), 0.0, 1e-10);
+  // Verify it's actually a JulianCentury quantity with correct unit_id
+  EXPECT_EQ(jc.unit_id(), UNIT_ID_JULIAN_CENTURY);
+}
+
+TEST(Time, JulianCenturiesQtyNonZero) {
+  // 36525 days ≈ 1 Julian century
+  auto jd = JulianDate(2451545.0 + 36525.0);
+  auto jc = jd.julian_centuries_qty();
+  EXPECT_NEAR(jc.value(), 1.0, 1e-10);
+}
+
+TEST(Time, ArithmeticWithHours) {
+  // Test that operator+ works with non-Day time quantities via add_qty
+  auto jd1 = JulianDate(2451545.0);
+  auto jd2 = jd1 + qtty::Hour(24.0);
+  EXPECT_NEAR((jd2 - jd1).value(), 1.0, 1e-10); // 24 hours = 1 day
+}
+
+TEST(Time, ArithmeticWithMinutes) {
+  auto mjd1 = MJD(60200.0);
+  auto mjd2 = mjd1 + qtty::Minute(1440.0);
+  EXPECT_NEAR((mjd2 - mjd1).value(), 1.0, 1e-10); // 1440 minutes = 1 day
+}
+
+TEST(Time, SubtractQuantityHours) {
+  auto jd1 = JulianDate(2451546.0);
+  auto jd2 = jd1 - qtty::Hour(12.0);
+  EXPECT_NEAR(jd2.value(), 2451545.5, 1e-10);
+}
+
+TEST(Time, DifferenceConvertible) {
+  // operator- returns qtty::Day which supports .to<>() conversion
+  auto jd1 = JulianDate(2451545.0);
+  auto jd2 = JulianDate(2451546.0);
+  auto diff = jd2 - jd1; // qtty::Day
+  auto hours = diff.to<qtty::Hour>();
+  EXPECT_NEAR(hours.value(), 24.0, 1e-10);
+}

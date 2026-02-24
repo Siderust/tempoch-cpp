@@ -78,12 +78,27 @@ template <> struct TimeScaleTraits<JDScale> {
     return tempoch_jd_difference(a, b);
   }
 
+  /// Difference as a typed `qtty_quantity_t` (Day unit).
+  static qtty_quantity_t difference_qty(double a, double b) {
+    return tempoch_jd_difference_qty(a, b);
+  }
+
+  /// Add a typed duration quantity and write result to @p out.
+  static void add_qty(double jd, qtty_quantity_t duration, double &out) {
+    check_status(tempoch_jd_add_qty(jd, duration, &out), "Time<JD>::add_qty");
+  }
+
   /// J2000.0 epoch constant (JD 2 451 545.0).
   static double j2000() { return tempoch_jd_j2000(); }
 
   /// Julian centuries elapsed since J2000.
   static double julian_centuries(double jd) {
     return tempoch_jd_julian_centuries(jd);
+  }
+
+  /// Julian centuries since J2000 as a typed `qtty_quantity_t` (JulianCentury unit).
+  static qtty_quantity_t julian_centuries_qty(double jd) {
+    return tempoch_jd_julian_centuries_qty(jd);
   }
 };
 
@@ -102,6 +117,16 @@ template <> struct TimeScaleTraits<MJDScale> {
   static double difference(double a, double b) {
     return tempoch_mjd_difference(a, b);
   }
+
+  /// Difference as a typed `qtty_quantity_t` (Day unit).
+  static qtty_quantity_t difference_qty(double a, double b) {
+    return tempoch_mjd_difference_qty(a, b);
+  }
+
+  /// Add a typed duration quantity and write result to @p out.
+  static void add_qty(double mjd, qtty_quantity_t duration, double &out) {
+    check_status(tempoch_mjd_add_qty(mjd, duration, &out), "Time<MJD>::add_qty");
+  }
 };
 
 // ── UTCScale (internally stored as MJD) ─────────────────────────────────────
@@ -118,6 +143,16 @@ template <> struct TimeScaleTraits<UTCScale> {
 
   static double difference(double a, double b) {
     return tempoch_mjd_difference(a, b);
+  }
+
+  /// Difference as a typed `qtty_quantity_t` (Day unit).
+  static qtty_quantity_t difference_qty(double a, double b) {
+    return TimeScaleTraits<MJDScale>::difference_qty(a, b);
+  }
+
+  /// Add a typed duration quantity and write result to @p out.
+  static void add_qty(double mjd, qtty_quantity_t duration, double &out) {
+    TimeScaleTraits<MJDScale>::add_qty(mjd, duration, out);
   }
 };
 

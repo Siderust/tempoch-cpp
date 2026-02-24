@@ -67,3 +67,9 @@ TEST(Period, FromC) {
   EXPECT_NEAR(p.start().value(), 60200.0, 1e-10);
   EXPECT_NEAR(p.duration().value(), 1.0, 1e-10);
 }
+
+TEST(Period, DurationInMinutes) {
+  Period p(MJD(60200.0), MJD(60200.5)); // 0.5 day = 720 minutes
+  auto min = p.duration<qtty::Minute>();
+  EXPECT_NEAR(min.value(), 720.0, 1e-6);
+}
