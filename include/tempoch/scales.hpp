@@ -96,7 +96,8 @@ template <> struct TimeScaleTraits<JDScale> {
     return tempoch_jd_julian_centuries(jd);
   }
 
-  /// Julian centuries since J2000 as a typed `qtty_quantity_t` (JulianCentury unit).
+  /// Julian centuries since J2000 as a typed `qtty_quantity_t`
+  /// (JulianCentury unit).
   static qtty_quantity_t julian_centuries_qty(double jd) {
     return tempoch_jd_julian_centuries_qty(jd);
   }
@@ -125,7 +126,8 @@ template <> struct TimeScaleTraits<MJDScale> {
 
   /// Add a typed duration quantity and write result to @p out.
   static void add_qty(double mjd, qtty_quantity_t duration, double &out) {
-    check_status(tempoch_mjd_add_qty(mjd, duration, &out), "Time<MJD>::add_qty");
+    check_status(tempoch_mjd_add_qty(mjd, duration, &out),
+                 "Time<MJD>::add_qty");
   }
 };
 
