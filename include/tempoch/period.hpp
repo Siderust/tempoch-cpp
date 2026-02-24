@@ -118,8 +118,8 @@ public:
    */
   template <typename TargetType = qtty::DayTag>
   qtty::Quantity<typename qtty::ExtractTag<TargetType>::type> duration() const {
-    double days = tempoch_period_mjd_duration_days(m_inner);
-    return qtty::Quantity<qtty::DayTag>(days).template to<TargetType>();
+    auto qty = tempoch_period_mjd_duration_qty(m_inner);
+    return qtty::Quantity<qtty::DayTag>(qty.value).template to<TargetType>();
   }
 
   /**

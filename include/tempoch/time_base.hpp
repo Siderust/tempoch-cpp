@@ -206,16 +206,20 @@ public:
    * @endcode
    */
   template <typename Q> Time operator+(const qtty::Quantity<Q> &delta) const {
-    return Time(TimeScaleTraits<S>::add_days(
-        m_days, delta.template to<qtty::DayTag>().value()));
+    qtty_quantity_t qty{delta.value(), qtty::UnitTraits<Q>::unit_id()};
+    double result;
+    TimeScaleTraits<S>::add_qty(m_days, qty, result);
+    return Time(result);
   }
 
   /**
    * @brief Retreat by a typed time quantity.
    */
   template <typename Q> Time operator-(const qtty::Quantity<Q> &delta) const {
-    return Time(TimeScaleTraits<S>::add_days(
-        m_days, -delta.template to<qtty::DayTag>().value()));
+    qtty_quantity_t neg_qty{-delta.value(), qtty::UnitTraits<Q>::unit_id()};
+    double result;
+    TimeScaleTraits<S>::add_qty(m_days, neg_qty, result);
+    return Time(result);
   }
 
   /**
@@ -228,7 +232,8 @@ public:
    * @endcode
    */
   qtty::Day operator-(const Time &other) const {
-    return qtty::Day(TimeScaleTraits<S>::difference(m_days, other.m_days));
+    auto qty = TimeScaleTraits<S>::difference_qty(m_days, other.m_days);
+    return qtty::Day(qty.value);
   }
 
   // ── Comparisons ───────────────────────────────────────────────────────
@@ -253,6 +258,14 @@ public:
   std::enable_if_t<std::is_same_v<U, JDScale>, double>
   julian_centuries() const {
     return TimeScaleTraits<JDScale>::julian_centuries(m_days);
+  }
+
+  /// Julian centuries since J2000 as a typed quantity.  Only for `Time<JDScale>`.
+  template <typename U = S>
+  std::enable_if_t<std::is_same_v<U, JDScale>, qtty::JulianCentury>
+  julian_centuries_qty() const {
+    auto qty = TimeScaleTraits<JDScale>::julian_centuries_qty(m_days);
+    return qtty::JulianCentury(qty.value);
   }
 
   // ── JD ↔ MJD convenience (preserves old API surface) ──────────────────
