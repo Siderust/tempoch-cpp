@@ -260,7 +260,8 @@ public:
     return TimeScaleTraits<JDScale>::julian_centuries(m_days);
   }
 
-  /// Julian centuries since J2000 as a typed quantity.  Only for `Time<JDScale>`.
+  /// Julian centuries since J2000 as a typed quantity.
+  /// Only for `Time<JDScale>`.
   template <typename U = S>
   std::enable_if_t<std::is_same_v<U, JDScale>, qtty::JulianCentury>
   julian_centuries_qty() const {
