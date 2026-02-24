@@ -29,8 +29,8 @@ TEST(Time, JulianDateRoundtripUtc) {
 
 TEST(Time, JulianDateArithmetic) {
   auto jd1 = JulianDate(2451545.0);
-  auto jd2 = jd1 + 365.25;
-  EXPECT_NEAR(jd2 - jd1, 365.25, 1e-10);
+  auto jd2 = jd1 + qtty::Day(365.25);
+  EXPECT_NEAR((jd2 - jd1).value(), 365.25, 1e-10);
 }
 
 TEST(Time, JulianCenturies) {
@@ -75,8 +75,8 @@ TEST(Time, MjdFromUtc) {
 
 TEST(Time, MjdArithmetic) {
   auto mjd1 = MJD(60200.0);
-  auto mjd2 = mjd1 + 1.5;
-  EXPECT_NEAR(mjd2 - mjd1, 1.5, 1e-10);
+  auto mjd2 = mjd1 + qtty::Day(1.5);
+  EXPECT_NEAR((mjd2 - mjd1).value(), 1.5, 1e-10);
 }
 
 TEST(Time, MjdComparisons) {
