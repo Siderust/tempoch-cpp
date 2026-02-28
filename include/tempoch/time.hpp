@@ -24,6 +24,36 @@ using JulianDate = Time<JDScale>;
 /// Modified Julian Date — JD − 2 400 000.5.
 using MJD = Time<MJDScale>;
 
+/// Barycentric Dynamical Time.
+using TDB = Time<TDBScale>;
+
+/// Terrestrial Time.
+using TT = Time<TTScale>;
+
+/// International Atomic Time.
+using TAI = Time<TAIScale>;
+
+/// Geocentric Coordinate Time.
+using TCG = Time<TCGScale>;
+
+/// Barycentric Coordinate Time.
+using TCB = Time<TCBScale>;
+
+/// GPS Time.
+using GPS = Time<GPSScale>;
+
+/// Universal Time (UT1).
+using UT = Time<UTScale>;
+
+/// Alias — mirrors Rust's `UniversalTime`.
+using UniversalTime = Time<UTScale>;
+
+/// Julian Ephemeris Date (≡ TDB expressed as JD).
+using JDE = Time<JDEScale>;
+
+/// Unix (POSIX) time — seconds since 1970-01-01T00:00:00 UTC.
+using UnixTime = Time<UnixTimeScale>;
+
 // `UTC` and `CivilTime` are already declared in time_base.hpp:
 //   using UTC = CivilTime;
 

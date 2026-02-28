@@ -289,6 +289,16 @@ public:
   std::enable_if_t<std::is_same_v<U, MJDScale>, Time<JDScale>> to_jd() const {
     return Time<JDScale>(TimeConvertTraits<MJDScale, JDScale>::convert(m_days));
   }
+
+  // ── UT-only extras (SFINAE-guarded) ───────────────────────────────────
+
+  /// ΔT = TT − UT1 in seconds.  Only available for `Time<UTScale>`.
+  template <typename U = S>
+  std::enable_if_t<std::is_same_v<U, UTScale>, qtty::Second>
+  delta_t() const {
+    double jd = TimeConvertTraits<UTScale, JDScale>::convert(m_days);
+    return qtty::Second(tempoch_delta_t_seconds(jd));
+  }
 };
 
 // ============================================================================
