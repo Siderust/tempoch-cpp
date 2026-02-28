@@ -1,3 +1,7 @@
+# Artifacts
+build*/
+coverage*/
+
 # Prerequisites
 *.d
 
