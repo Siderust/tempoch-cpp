@@ -13,12 +13,10 @@
  *  3. Specialise `TimeConvertTraits<A,B>` for each supported conversion pair.
  */
 
-#include "ffi_core.hpp" // tempoch_ffi.h + check_status
+#include "civil_time.hpp" // CivilTime struct definition
+#include "ffi_core.hpp"   // tempoch_ffi.h + check_status
 
 namespace tempoch {
-
-// Forward declaration — defined in time_base.hpp.
-struct CivilTime;
 
 // ============================================================================
 // Scale Tags
@@ -188,16 +186,13 @@ namespace detail {
 template <typename S, double (*JdToS)(double), double (*SToJd)(double)>
 struct JDBackedScaleTraits {
   /// CivilTime → JD → target scale.
-  /// Template parameter CT defers instantiation until CivilTime is complete.
-  template <typename CT = CivilTime>
-  static double from_civil(const CT &ct) {
+  template <typename CT> static double from_civil(const CT &ct) {
     double jd_val = TimeScaleTraits<JDScale>::from_civil(ct);
     return JdToS(jd_val);
   }
 
   /// Target scale → JD → CivilTime.
-  template <typename CT = CivilTime>
-  static CT to_civil(double val) {
+  template <typename CT> static CT to_civil(double val) {
     double jd_val = SToJd(val);
     return TimeScaleTraits<JDScale>::to_civil(jd_val);
   }
@@ -231,64 +226,80 @@ struct JDBackedScaleTraits {
 
 // ── TTScale ─────────────────────────────────────────────────────────────────
 
-template <> struct TimeScaleTraits<TTScale>
+template <>
+struct TimeScaleTraits<TTScale>
     : detail::JDBackedScaleTraits<TTScale, tempoch_jd_to_tt, tempoch_tt_to_jd> {
   static constexpr const char *label() { return "TT"; }
 };
 
 // ── TAIScale ────────────────────────────────────────────────────────────────
 
-template <> struct TimeScaleTraits<TAIScale>
-    : detail::JDBackedScaleTraits<TAIScale, tempoch_jd_to_tai, tempoch_tai_to_jd> {
+template <>
+struct TimeScaleTraits<TAIScale>
+    : detail::JDBackedScaleTraits<TAIScale, tempoch_jd_to_tai,
+                                  tempoch_tai_to_jd> {
   static constexpr const char *label() { return "TAI"; }
 };
 
 // ── TDBScale ────────────────────────────────────────────────────────────────
 
-template <> struct TimeScaleTraits<TDBScale>
-    : detail::JDBackedScaleTraits<TDBScale, tempoch_jd_to_tdb, tempoch_tdb_to_jd> {
+template <>
+struct TimeScaleTraits<TDBScale>
+    : detail::JDBackedScaleTraits<TDBScale, tempoch_jd_to_tdb,
+                                  tempoch_tdb_to_jd> {
   static constexpr const char *label() { return "TDB"; }
 };
 
 // ── TCGScale ────────────────────────────────────────────────────────────────
 
-template <> struct TimeScaleTraits<TCGScale>
-    : detail::JDBackedScaleTraits<TCGScale, tempoch_jd_to_tcg, tempoch_tcg_to_jd> {
+template <>
+struct TimeScaleTraits<TCGScale>
+    : detail::JDBackedScaleTraits<TCGScale, tempoch_jd_to_tcg,
+                                  tempoch_tcg_to_jd> {
   static constexpr const char *label() { return "TCG"; }
 };
 
 // ── TCBScale ────────────────────────────────────────────────────────────────
 
-template <> struct TimeScaleTraits<TCBScale>
-    : detail::JDBackedScaleTraits<TCBScale, tempoch_jd_to_tcb, tempoch_tcb_to_jd> {
+template <>
+struct TimeScaleTraits<TCBScale>
+    : detail::JDBackedScaleTraits<TCBScale, tempoch_jd_to_tcb,
+                                  tempoch_tcb_to_jd> {
   static constexpr const char *label() { return "TCB"; }
 };
 
 // ── GPSScale ────────────────────────────────────────────────────────────────
 
-template <> struct TimeScaleTraits<GPSScale>
-    : detail::JDBackedScaleTraits<GPSScale, tempoch_jd_to_gps, tempoch_gps_to_jd> {
+template <>
+struct TimeScaleTraits<GPSScale>
+    : detail::JDBackedScaleTraits<GPSScale, tempoch_jd_to_gps,
+                                  tempoch_gps_to_jd> {
   static constexpr const char *label() { return "GPS"; }
 };
 
 // ── UTScale ─────────────────────────────────────────────────────────────────
 
-template <> struct TimeScaleTraits<UTScale>
+template <>
+struct TimeScaleTraits<UTScale>
     : detail::JDBackedScaleTraits<UTScale, tempoch_jd_to_ut, tempoch_ut_to_jd> {
   static constexpr const char *label() { return "UT1"; }
 };
 
 // ── JDEScale ────────────────────────────────────────────────────────────────
 
-template <> struct TimeScaleTraits<JDEScale>
-    : detail::JDBackedScaleTraits<JDEScale, tempoch_jd_to_jde, tempoch_jde_to_jd> {
+template <>
+struct TimeScaleTraits<JDEScale>
+    : detail::JDBackedScaleTraits<JDEScale, tempoch_jd_to_jde,
+                                  tempoch_jde_to_jd> {
   static constexpr const char *label() { return "JDE"; }
 };
 
 // ── UnixTimeScale ───────────────────────────────────────────────────────────
 
-template <> struct TimeScaleTraits<UnixTimeScale>
-    : detail::JDBackedScaleTraits<UnixTimeScale, tempoch_jd_to_unix, tempoch_unix_to_jd> {
+template <>
+struct TimeScaleTraits<UnixTimeScale>
+    : detail::JDBackedScaleTraits<UnixTimeScale, tempoch_jd_to_unix,
+                                  tempoch_unix_to_jd> {
   static constexpr const char *label() { return "Unix"; }
 };
 
@@ -431,24 +442,36 @@ template <> struct TimeConvertTraits<UnixTimeScale, JDScale> {
 // (MJD/UTC conversions are handled by explicit specializations above.)
 
 template <> struct TimeConvertTraits<MJDScale, TTScale> {
-  static double convert(double m) { return tempoch_jd_to_tt(tempoch_mjd_to_jd(m)); }
+  static double convert(double m) {
+    return tempoch_jd_to_tt(tempoch_mjd_to_jd(m));
+  }
 };
 template <> struct TimeConvertTraits<TTScale, MJDScale> {
-  static double convert(double t) { return tempoch_jd_to_mjd(tempoch_tt_to_jd(t)); }
+  static double convert(double t) {
+    return tempoch_jd_to_mjd(tempoch_tt_to_jd(t));
+  }
 };
 
 template <> struct TimeConvertTraits<MJDScale, TDBScale> {
-  static double convert(double m) { return tempoch_jd_to_tdb(tempoch_mjd_to_jd(m)); }
+  static double convert(double m) {
+    return tempoch_jd_to_tdb(tempoch_mjd_to_jd(m));
+  }
 };
 template <> struct TimeConvertTraits<TDBScale, MJDScale> {
-  static double convert(double t) { return tempoch_jd_to_mjd(tempoch_tdb_to_jd(t)); }
+  static double convert(double t) {
+    return tempoch_jd_to_mjd(tempoch_tdb_to_jd(t));
+  }
 };
 
 template <> struct TimeConvertTraits<MJDScale, TAIScale> {
-  static double convert(double m) { return tempoch_jd_to_tai(tempoch_mjd_to_jd(m)); }
+  static double convert(double m) {
+    return tempoch_jd_to_tai(tempoch_mjd_to_jd(m));
+  }
 };
 template <> struct TimeConvertTraits<TAIScale, MJDScale> {
-  static double convert(double t) { return tempoch_jd_to_mjd(tempoch_tai_to_jd(t)); }
+  static double convert(double t) {
+    return tempoch_jd_to_mjd(tempoch_tai_to_jd(t));
+  }
 };
 
 } // namespace tempoch
