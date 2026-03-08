@@ -121,11 +121,21 @@ FetchContent_MakeAvailable(googletest)
 # Enable testing
 enable_testing()
 
-# Example
+# Examples
 add_executable(time_example examples/time_example.cpp)
 target_link_libraries(time_example PRIVATE tempoch_cpp)
 if(DEFINED _tempoch_rpath)
     set_target_properties(time_example PROPERTIES
+        BUILD_RPATH ${_tempoch_rpath}
+        INSTALL_RPATH ${_tempoch_rpath}
+    )
+endif()
+
+# All time-scale types: JD, MJD, TDB, TT, TAI, TCG, TCB, GPS, UT, JDE, UnixTime
+add_executable(timescales examples/timescales.cpp)
+target_link_libraries(timescales PRIVATE tempoch_cpp)
+if(DEFINED _tempoch_rpath)
+    set_target_properties(timescales PROPERTIES
         BUILD_RPATH ${_tempoch_rpath}
         INSTALL_RPATH ${_tempoch_rpath}
     )
