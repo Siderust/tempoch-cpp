@@ -60,8 +60,8 @@ int main() {
 
     Period observing_window(MJD(60200.0), MJD(60200.5));
     std::cout << "Duration: "
-              << observing_window.duration<qtty::Hour>().value()
-              << " h\n";
+              << observing_window.duration<qtty::Hour>()
+              << "\n";
 }
 ```
 
@@ -74,7 +74,7 @@ auto jd0 = JulianDate::J2000();
 auto jd1 = jd0 + qtty::Hour(12.0);
 auto dt = jd1 - jd0;
 
-std::cout << dt.to<qtty::Hour>().value() << " hours\n";
+std::cout << dt.to<qtty::Hour>() << "\n";
 ```
 
 ## Documentation
