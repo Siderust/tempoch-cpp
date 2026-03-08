@@ -1,6 +1,7 @@
 # Artifacts
 build*/
 coverage*/
+coverage.xml
 
 # Prerequisites
 *.d
