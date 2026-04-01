@@ -5,15 +5,28 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 option(TEMPOCH_BUILD_DOCS "Enable Doxygen documentation target." ON)
+option(TEMPOCH_USE_CANONICAL_RUST
+       "Build/link against ../../../rust/tempoch instead of the vendored snapshot."
+       OFF)
 
 # Find Cargo for building Rust library
 find_program(CARGO_BIN cargo REQUIRED)
 
 # Paths to tempoch-ffi
-set(TEMPOCH_SUBMODULE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tempoch)
-set(TEMPOCH_FFI_DIR       ${TEMPOCH_SUBMODULE_DIR}/tempoch-ffi)
+if(TEMPOCH_USE_CANONICAL_RUST)
+    set(TEMPOCH_CANONICAL_RUST_DIR
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../rust/tempoch
+        CACHE PATH "Path to the canonical rust/tempoch workspace")
+    set(TEMPOCH_SUBMODULE_DIR ${TEMPOCH_CANONICAL_RUST_DIR})
+    set(TEMPOCH_ARTIFACT_DIR  ${TEMPOCH_CANONICAL_RUST_DIR}/target/release)
+    set(TEMPOCH_TARGET_DIR    ${TEMPOCH_CANONICAL_RUST_DIR}/target)
+else()
+    set(TEMPOCH_SUBMODULE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tempoch)
+    set(TEMPOCH_ARTIFACT_DIR  ${TEMPOCH_SUBMODULE_DIR}/tempoch-ffi/target/release)
+    set(TEMPOCH_TARGET_DIR    ${TEMPOCH_SUBMODULE_DIR}/tempoch-ffi/target)
+endif()
+set(TEMPOCH_FFI_DIR         ${TEMPOCH_SUBMODULE_DIR}/tempoch-ffi)
 set(TEMPOCH_FFI_INCLUDE_DIR ${TEMPOCH_FFI_DIR}/include)
-set(TEMPOCH_ARTIFACT_DIR  ${TEMPOCH_FFI_DIR}/target/release)
 
 # Allow enabling Cargo features for tempoch-ffi (e.g., serde)
 set(TEMPOCH_FFI_FEATURES "" CACHE STRING "Cargo features for tempoch-ffi (e.g., 'serde' or empty)")
@@ -43,7 +56,7 @@ endif()
 add_custom_target(
     build_tempoch_ffi
     COMMAND ${CMAKE_COMMAND} -E env
-            CARGO_TARGET_DIR=${TEMPOCH_FFI_DIR}/target
+            CARGO_TARGET_DIR=${TEMPOCH_TARGET_DIR}
             ${CARGO_BIN} build --release ${_TEMPOCH_FEATURES_ARGS}
     WORKING_DIRECTORY ${TEMPOCH_FFI_DIR}
     BYPRODUCTS ${TEMPOCH_LIBRARY_PATH}
@@ -100,9 +113,17 @@ endif()
 
 # Set RPATH for runtime library location
 if(APPLE)
-    set(_tempoch_rpath "@loader_path/../tempoch/tempoch-ffi/target/release")
+    if(TEMPOCH_USE_CANONICAL_RUST)
+        set(_tempoch_rpath "${TEMPOCH_ARTIFACT_DIR}")
+    else()
+        set(_tempoch_rpath "@loader_path/../tempoch/tempoch-ffi/target/release")
+    endif()
 elseif(UNIX)
-    set(_tempoch_rpath "$ORIGIN/../tempoch/tempoch-ffi/target/release")
+    if(TEMPOCH_USE_CANONICAL_RUST)
+        set(_tempoch_rpath "${TEMPOCH_ARTIFACT_DIR}")
+    else()
+        set(_tempoch_rpath "$ORIGIN/../tempoch/tempoch-ffi/target/release")
+    endif()
 endif()
 
 # Only build tests, examples, and Google Test when standalone (not as subdirectory)
