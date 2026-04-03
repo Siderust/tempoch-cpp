@@ -85,8 +85,7 @@ public:
  */
 class InternalPanicError : public TempochException {
 public:
-  explicit InternalPanicError(const std::string &msg)
-      : TempochException(msg) {}
+  explicit InternalPanicError(const std::string &msg) : TempochException(msg) {}
 };
 
 // ============================================================================
