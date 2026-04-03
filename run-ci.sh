@@ -13,13 +13,8 @@ run_lint() {
     rm -rf build
     cmake -S . -B build -G Ninja -DTEMPOCH_BUILD_DOCS=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
-    mapfile -t format_files < <(git ls-files '*.hpp' '*.cpp')
-    if [ ${#format_files[@]} -gt 0 ]; then
-        bold "Running clang-format..."
-        clang-format --dry-run --Werror "${format_files[@]}"
-    else
-        echo "No C++ files to format"
-    fi
+    bold "Running clang-format..."
+    ./clang_format.sh --check --no-diff
 
     mapfile -t tidy_files < <(git ls-files '*.cpp')
     if [ ${#tidy_files[@]} -gt 0 ]; then
