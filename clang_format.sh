@@ -64,7 +64,7 @@ resolve_clang_format() {
     return
   fi
 
-  for candidate in clang-format clang-format-17 clang-format-16 clang-format-15 clang-format-14; do
+  for candidate in clang-format-18 clang-format clang-format-17 clang-format-16 clang-format-15 clang-format-14; do
     if command -v "$candidate" >/dev/null 2>&1; then
       CLANG_FORMAT_BIN="$candidate"
       return
