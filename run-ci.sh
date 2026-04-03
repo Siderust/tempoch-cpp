@@ -14,6 +14,9 @@ run_lint() {
     cmake -S . -B build -G Ninja -DTEMPOCH_BUILD_DOCS=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
     bold "Running clang-format..."
+    if command -v clang-format-18 >/dev/null 2>&1; then
+        export CLANG_FORMAT_BIN=clang-format-18
+    fi
     ./clang_format.sh --check --no-diff
 
     mapfile -t tidy_files < <(git ls-files '*.cpp')
@@ -74,7 +77,7 @@ cd "${ROOT_DIR}"
 
 # Check required tools
 bold "Checking required tools..."
-for tool in cmake ninja clang-format clang-tidy cargo gcovr; do
+for tool in cmake ninja clang-tidy cargo gcovr; do
     if ! command -v "$tool" &> /dev/null; then
         error "ERROR: $tool not found. Please install it."
         exit 1
