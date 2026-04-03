@@ -197,7 +197,8 @@ template <typename S> struct GenericScaleTraits {
 
 } // namespace detail
 
-template <> struct TimeScaleTraits<JDScale> : detail::GenericScaleTraits<JDScale> {
+template <>
+struct TimeScaleTraits<JDScale> : detail::GenericScaleTraits<JDScale> {
   static constexpr const char *label() { return "JD"; }
 
   static double j2000() { return tempoch_jd_j2000(); }
@@ -211,43 +212,53 @@ template <> struct TimeScaleTraits<JDScale> : detail::GenericScaleTraits<JDScale
   }
 };
 
-template <> struct TimeScaleTraits<MJDScale> : detail::GenericScaleTraits<MJDScale> {
+template <>
+struct TimeScaleTraits<MJDScale> : detail::GenericScaleTraits<MJDScale> {
   static constexpr const char *label() { return "MJD"; }
 };
 
-template <> struct TimeScaleTraits<UTCScale> : detail::GenericScaleTraits<UTCScale> {
+template <>
+struct TimeScaleTraits<UTCScale> : detail::GenericScaleTraits<UTCScale> {
   static constexpr const char *label() { return "UTC"; }
 };
 
-template <> struct TimeScaleTraits<TTScale> : detail::GenericScaleTraits<TTScale> {
+template <>
+struct TimeScaleTraits<TTScale> : detail::GenericScaleTraits<TTScale> {
   static constexpr const char *label() { return "TT"; }
 };
 
-template <> struct TimeScaleTraits<TAIScale> : detail::GenericScaleTraits<TAIScale> {
+template <>
+struct TimeScaleTraits<TAIScale> : detail::GenericScaleTraits<TAIScale> {
   static constexpr const char *label() { return "TAI"; }
 };
 
-template <> struct TimeScaleTraits<TDBScale> : detail::GenericScaleTraits<TDBScale> {
+template <>
+struct TimeScaleTraits<TDBScale> : detail::GenericScaleTraits<TDBScale> {
   static constexpr const char *label() { return "TDB"; }
 };
 
-template <> struct TimeScaleTraits<TCGScale> : detail::GenericScaleTraits<TCGScale> {
+template <>
+struct TimeScaleTraits<TCGScale> : detail::GenericScaleTraits<TCGScale> {
   static constexpr const char *label() { return "TCG"; }
 };
 
-template <> struct TimeScaleTraits<TCBScale> : detail::GenericScaleTraits<TCBScale> {
+template <>
+struct TimeScaleTraits<TCBScale> : detail::GenericScaleTraits<TCBScale> {
   static constexpr const char *label() { return "TCB"; }
 };
 
-template <> struct TimeScaleTraits<GPSScale> : detail::GenericScaleTraits<GPSScale> {
+template <>
+struct TimeScaleTraits<GPSScale> : detail::GenericScaleTraits<GPSScale> {
   static constexpr const char *label() { return "GPS"; }
 };
 
-template <> struct TimeScaleTraits<UTScale> : detail::GenericScaleTraits<UTScale> {
+template <>
+struct TimeScaleTraits<UTScale> : detail::GenericScaleTraits<UTScale> {
   static constexpr const char *label() { return "UT1"; }
 };
 
-template <> struct TimeScaleTraits<JDEScale> : detail::GenericScaleTraits<JDEScale> {
+template <>
+struct TimeScaleTraits<JDEScale> : detail::GenericScaleTraits<JDEScale> {
   static constexpr const char *label() { return "JDE"; }
 };
 
@@ -270,10 +281,9 @@ struct TimeScaleTraits<UnixTimeScale>
 template <typename From, typename To> struct TimeConvertTraits {
   static double convert(double src) {
     double out = 0.0;
-    check_status(
-        tempoch_time_convert(src, detail::scale_id_v<From>,
-                             detail::scale_id_v<To>, &out),
-        "tempoch_time_convert");
+    check_status(tempoch_time_convert(src, detail::scale_id_v<From>,
+                                      detail::scale_id_v<To>, &out),
+                 "tempoch_time_convert");
     return out;
   }
 };
