@@ -5,7 +5,8 @@
  * @brief Core `Time<S>` class template and `CivilTime` struct.
  *
  * Mirrors the Rust `tempoch_core::instant::Time<S: TimeScale>` design:
- *   - A single `double` (days in the scale's epoch) with compile-time scale
+ *   - A single `double` in the scale's native scalar representation
+ *     (days for astronomical scales, seconds for Unix time) with compile-time
  *     dispatch via `TimeScaleTraits<S>`.
  *   - Cross-scale `.to<T>()` via `TimeConvertTraits<S,T>`.
  *   - `CivilTime` replaces the old `UTC` aggregate struct.
@@ -22,51 +23,8 @@
 
 namespace tempoch {
 
-// ============================================================================
-// TimeScaleTraits deferred implementations (need CivilTime to be complete)
-// ============================================================================
-
-inline double TimeScaleTraits<JDScale>::from_civil(const CivilTime &ct) {
-  double jd;
-  auto c = ct.to_c();
-  check_status(tempoch_jd_from_utc(c, &jd), "Time<JD>::from_utc");
-  return jd;
-}
-
-inline CivilTime TimeScaleTraits<JDScale>::to_civil(double jd) {
-  tempoch_utc_t out;
-  check_status(tempoch_jd_to_utc(jd, &out), "Time<JD>::to_utc");
-  return CivilTime::from_c(out);
-}
-
-inline double TimeScaleTraits<MJDScale>::from_civil(const CivilTime &ct) {
-  double mjd;
-  auto c = ct.to_c();
-  check_status(tempoch_mjd_from_utc(c, &mjd), "Time<MJD>::from_utc");
-  return mjd;
-}
-
-inline CivilTime TimeScaleTraits<MJDScale>::to_civil(double mjd) {
-  tempoch_utc_t out;
-  check_status(tempoch_mjd_to_utc(mjd, &out), "Time<MJD>::to_utc");
-  return CivilTime::from_c(out);
-}
-
-// UTCScale delegates to MJDScale (same internal representation).
-inline double TimeScaleTraits<UTCScale>::from_civil(const CivilTime &ct) {
-  return TimeScaleTraits<MJDScale>::from_civil(ct);
-}
-
-inline CivilTime TimeScaleTraits<UTCScale>::to_civil(double mjd) {
-  return TimeScaleTraits<MJDScale>::to_civil(mjd);
-}
-
-// ============================================================================
-// Time<S> — the core template
-// ============================================================================
-
 /**
- * @brief A point in time on scale @p S, stored as a raw `double` (days).
+ * @brief A point in time on scale @p S, stored as a raw native scalar.
  *
  * Mirrors `tempoch_core::instant::Time<S: TimeScale>`.  Most operations are
  * dispatched through `TimeScaleTraits<S>`, keeping this class small and
@@ -88,11 +46,18 @@ public:
 
   // ── Constructors ──────────────────────────────────────────────────────
 
-  /// Construct from a raw day count in this scale.
-  constexpr explicit Time(double days) : m_days(days) {}
+  /// Construct from a raw value in this scale's native representation.
+  constexpr explicit Time(double value) : m_days(value) {}
 
-  /// Default-construct to zero (MJD epoch).
+  /// Default-construct to zero in the scale's native representation.
   constexpr Time() : m_days(0.0) {}
+
+  // Rule of Five (trivial — all defaulted)
+  Time(const Time &) = default;
+  Time(Time &&) noexcept = default;
+  Time &operator=(const Time &) = default;
+  Time &operator=(Time &&) noexcept = default;
+  ~Time() = default;
 
   // ── Factory: from civil time ──────────────────────────────────────────
 
@@ -110,8 +75,8 @@ public:
 
   // ── Accessors ─────────────────────────────────────────────────────────
 
-  /// Raw value in this scale's day-count.
-  constexpr double value() const { return m_days; }
+  /// Raw value in this scale's native representation.
+  constexpr double value() const noexcept { return m_days; }
 
   /// Human-readable label for the scale (e.g. "JD", "MJD", "UTC").
   static constexpr const char *label() { return TimeScaleTraits<S>::label(); }
@@ -176,12 +141,12 @@ public:
 
   // ── Comparisons ───────────────────────────────────────────────────────
 
-  bool operator==(const Time &o) const { return m_days == o.m_days; }
-  bool operator!=(const Time &o) const { return m_days != o.m_days; }
-  bool operator<(const Time &o) const { return m_days < o.m_days; }
-  bool operator<=(const Time &o) const { return m_days <= o.m_days; }
-  bool operator>(const Time &o) const { return m_days > o.m_days; }
-  bool operator>=(const Time &o) const { return m_days >= o.m_days; }
+  bool operator==(const Time &o) const noexcept { return m_days == o.m_days; }
+  bool operator!=(const Time &o) const noexcept { return m_days != o.m_days; }
+  bool operator<(const Time &o) const noexcept { return m_days < o.m_days; }
+  bool operator<=(const Time &o) const noexcept { return m_days <= o.m_days; }
+  bool operator>(const Time &o) const noexcept { return m_days > o.m_days; }
+  bool operator>=(const Time &o) const noexcept { return m_days >= o.m_days; }
 
   // ── JD-only extras (SFINAE-guarded) ───────────────────────────────────
 

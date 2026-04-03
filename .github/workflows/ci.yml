@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       CARGO_TERM_COLOR: always
+      CLANG_FORMAT_BIN: clang-format-18
     steps:
       - name: Checkout (with submodules)
         uses: actions/checkout@v4
@@ -31,10 +32,14 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates wget
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc >/dev/null
+          echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main" | sudo tee /etc/apt/sources.list.d/llvm-18.list >/dev/null
+          sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake \
             ninja-build \
-            clang-format \
+            clang-format-18 \
             clang-tidy
 
       - name: Set up Rust (stable)
@@ -52,12 +57,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t files < <(git ls-files '*.hpp' '*.cpp')
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No C++ files found."
-            exit 0
-          fi
-          clang-format --dry-run --Werror "${files[@]}"
+          ./clang_format.sh --check --no-diff
 
       - name: clang-tidy check
         shell: bash
