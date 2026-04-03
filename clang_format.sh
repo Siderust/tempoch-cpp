@@ -3,9 +3,6 @@
 set -euo pipefail
 
 readonly ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly TARGET_DIRS=("include" "tests")
-readonly EXCLUDE_DIRS=("")
-
 MODE=""
 SHOW_DIFF=1
 CLANG_FORMAT_BIN="${CLANG_FORMAT_BIN:-}"
@@ -79,70 +76,20 @@ resolve_clang_format() {
 }
 
 collect_files() {
-  local dir
-  local pattern
   local file
-  local excluded
-  local skip
-  local -a find_cmd=(find)
   local -a collected=()
 
-  for dir in "${TARGET_DIRS[@]}"; do
-    find_cmd+=("$ROOT_DIR/$dir")
-  done
-
-  find_cmd+=( -type f \( )
-  for pattern in '*.h' '*.hh' '*.hpp' '*.hxx' '*.c' '*.cc' '*.cpp' '*.cxx'; do
-    find_cmd+=( -name "$pattern" -o )
-  done
-  unset 'find_cmd[${#find_cmd[@]}-1]'
-  find_cmd+=( \) -print0 )
-
-  mapfile -d '' collected < <("${find_cmd[@]}" | sort -z)
+  mapfile -t collected < <(git -C "$ROOT_DIR" ls-files '*.hpp' '*.cpp' | sort)
 
   FILES=()
   for file in "${collected[@]}"; do
-    skip=0
-    for excluded in "${EXCLUDE_DIRS[@]}"; do
-      if [[ "$file" == "$ROOT_DIR/$excluded/"* ]]; then
-        skip=1
-        break
-      fi
-    done
-
-    if [[ "$skip" -eq 0 ]]; then
-      FILES+=("$file")
-    fi
+    FILES+=("$ROOT_DIR/$file")
   done
 }
 
 check_files() {
-  local file
-  local tmp
-  local failed=0
-
   echo "Checking formatting with $CLANG_FORMAT_BIN"
-
-  for file in "${FILES[@]}"; do
-    tmp="$(mktemp)"
-    "$CLANG_FORMAT_BIN" "$file" > "$tmp"
-
-    if ! cmp -s "$file" "$tmp"; then
-      failed=1
-      echo "Needs formatting: ${file#$ROOT_DIR/}" >&2
-      if [[ "$SHOW_DIFF" -eq 1 ]]; then
-        diff -u "$file" "$tmp" || true
-      fi
-    fi
-
-    rm -f "$tmp"
-  done
-
-  if [[ "$failed" -ne 0 ]]; then
-    echo "clang-format check failed. Run: ./clang_format.sh --fix" >&2
-    exit 1
-  fi
-
+  "$CLANG_FORMAT_BIN" --dry-run --Werror "${FILES[@]}"
   echo "clang-format check passed."
 }
 
@@ -166,7 +113,7 @@ main() {
   collect_files
 
   if [[ ${#FILES[@]} -eq 0 ]]; then
-    echo "No C/C++ files found under include/ and tests/."
+    echo "No tracked .hpp or .cpp files found."
     exit 0
   fi
 
