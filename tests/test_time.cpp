@@ -161,3 +161,23 @@ TEST(Time, DifferenceConvertible) {
   auto hours = diff.to<qtty::Hour>();
   EXPECT_NEAR(hours.value(), 24.0, 1e-10);
 }
+
+TEST(Time, UnixTimeEpochIsZeroSeconds) {
+  auto unix = UnixTime::from_utc({1970, 1, 1, 0, 0, 0});
+  EXPECT_NEAR(unix.value(), 0.0, 1e-9);
+
+  auto utc = unix.to_utc();
+  EXPECT_EQ(utc.year, 1970);
+  EXPECT_EQ(utc.month, 1);
+  EXPECT_EQ(utc.day, 1);
+  EXPECT_EQ(utc.hour, 0);
+  EXPECT_EQ(utc.minute, 0);
+  EXPECT_EQ(utc.second, 0);
+}
+
+TEST(Time, UnixTimeRoundtripThroughJd) {
+  auto unix = UnixTime::from_utc({2000, 1, 1, 12, 0, 0});
+  auto jd = unix.to<JDScale>();
+  auto back = jd.to<UnixTimeScale>();
+  EXPECT_NEAR(back.value(), unix.value(), 1e-6);
+}

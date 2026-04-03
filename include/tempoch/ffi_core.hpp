@@ -62,6 +62,32 @@ public:
       : TempochException(msg) {}
 };
 
+/**
+ * @brief The supplied raw scale identifier is invalid.
+ */
+class InvalidScaleIdError : public TempochException {
+public:
+  explicit InvalidScaleIdError(const std::string &msg)
+      : TempochException(msg) {}
+};
+
+/**
+ * @brief The supplied quantity does not represent a time duration.
+ */
+class InvalidDurationUnitError : public TempochException {
+public:
+  explicit InvalidDurationUnitError(const std::string &msg)
+      : TempochException(msg) {}
+};
+
+/**
+ * @brief Rust caught a panic before unwinding across the FFI boundary.
+ */
+class InternalPanicError : public TempochException {
+public:
+  explicit InternalPanicError(const std::string &msg) : TempochException(msg) {}
+};
+
 // ============================================================================
 // Error Translation
 // ============================================================================
@@ -83,6 +109,12 @@ inline void check_status(tempoch_status_t status, const char *operation) {
     throw InvalidPeriodError(msg + "invalid period (start > end)");
   case TEMPOCH_STATUS_T_NO_INTERSECTION:
     throw NoIntersectionError(msg + "periods do not intersect");
+  case TEMPOCH_STATUS_T_INVALID_SCALE_ID:
+    throw InvalidScaleIdError(msg + "invalid scale id");
+  case TEMPOCH_STATUS_T_INVALID_DURATION_UNIT:
+    throw InvalidDurationUnitError(msg + "invalid duration unit");
+  case TEMPOCH_STATUS_T_INTERNAL_PANIC:
+    throw InternalPanicError(msg + "internal panic");
   default:
     throw TempochException(msg + "unknown error (" + std::to_string(status) +
                            ")");
