@@ -88,6 +88,15 @@ public:
   explicit InternalPanicError(const std::string &msg) : TempochException(msg) {}
 };
 
+/**
+ * @brief A UT1 conversion requested data beyond the compiled ΔT/EOP horizon.
+ */
+class Ut1HorizonExceededError : public TempochException {
+public:
+  explicit Ut1HorizonExceededError(const std::string &msg)
+      : TempochException(msg) {}
+};
+
 // ============================================================================
 // Error Translation
 // ============================================================================
@@ -115,6 +124,8 @@ inline void check_status(tempoch_status_t status, const char *operation) {
     throw InvalidDurationUnitError(msg + "invalid duration unit");
   case TEMPOCH_STATUS_T_INTERNAL_PANIC:
     throw InternalPanicError(msg + "internal panic");
+  case TEMPOCH_STATUS_T_UT1_HORIZON_EXCEEDED:
+    throw Ut1HorizonExceededError(msg + "UT1 horizon exceeded");
   default:
     throw TempochException(msg + "unknown error (" + std::to_string(status) +
                            ")");

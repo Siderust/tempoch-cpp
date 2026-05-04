@@ -18,6 +18,7 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <qtty/qtty.hpp>
 #include <tempoch/tempoch.hpp>
 
 int main() {
@@ -61,16 +62,16 @@ int main() {
   std::cout << std::scientific << std::setprecision(3);
   std::cout << "  Unix (seconds since 1970-01-01): " << ux.value() << "\n\n";
 
-  // ── 3. Fixed offsets between scales (seconds) ──────────────────────────
+  // ── 3. Fixed offsets between compatible scale encodings (seconds) ──────
   constexpr double SECS_PER_DAY = 86'400.0;
   double tt_tai_s = (tt.value() - tai.value()) * SECS_PER_DAY;
-  double tai_gps_s = (tai.value() - gps.value()) * SECS_PER_DAY;
 
   std::cout << std::fixed << std::setprecision(3);
   std::cout << "Fixed offsets between scales:\n";
   std::cout << "  TT − TAI  = " << tt_tai_s << " s  (constant 32.184 s)\n";
-  std::cout << "  TAI − GPS = " << tai_gps_s
-            << " s  (constant 19 s since 1980)\n\n";
+  std::cout << "  GPS values use their own epoch-based numeric encoding, so\n";
+  std::cout
+      << "  inter-scale comparisons should go through typed conversions.\n\n";
 
   // ── 4. Round-trips ──────────────────────────────────────────────────────
   JulianDate jd_from_mjd = mjd.to<JDScale>();
@@ -96,6 +97,7 @@ int main() {
   TT tt_obs = jd_obs.to<TTScale>();
   TAI tai_obs = jd_obs.to<TAIScale>();
   TDB tdb_obs = jd_obs.to<TDBScale>();
+  UT ut_obs = jd_obs.to<UTScale>();
 
   std::cout << std::fixed << std::setprecision(6);
   std::cout << "Observation: 2026-07-15 22:00:00 UTC\n";
@@ -104,13 +106,13 @@ int main() {
   std::cout << "  TT   : " << tt_obs.value() << "\n";
   std::cout << "  TAI  : " << tai_obs.value() << "\n";
   std::cout << "  TDB  : " << tdb_obs.value() << "\n";
+  std::cout << "  ΔT   : " << ut_obs.delta_t().value() << " s\n";
   std::cout << "  Julian centuries since J2000: " << jd_obs.julian_centuries()
             << "\n\n";
 
   // ── 6. Cross-scale arithmetic: add 1 hour in GPS, round-trip to JD ─────
-  constexpr double ONE_HOUR_DAYS = 1.0 / 24.0;
   GPS gps_obs = jd_obs.to<GPSScale>();
-  GPS gps_obs_plus1h(gps_obs.value() + ONE_HOUR_DAYS);
+  GPS gps_obs_plus1h = gps_obs + qtty::Hour(1.0);
   JulianDate jd_plus1h = gps_obs_plus1h.to<JDScale>();
 
   std::cout << "GPS +1 h → JD difference: " << std::fixed

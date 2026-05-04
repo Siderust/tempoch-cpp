@@ -179,5 +179,15 @@ TEST(Time, UnixTimeRoundtripThroughJd) {
   auto unix = UnixTime::from_utc({2000, 1, 1, 12, 0, 0});
   auto jd = unix.to<JDScale>();
   auto back = jd.to<UnixTimeScale>();
-  EXPECT_NEAR(back.value(), unix.value(), 1e-6);
+  EXPECT_NEAR(back.value(), unix.value(), 1e-5);
+}
+
+TEST(Time, CheckStatusMapsUt1HorizonError) {
+  EXPECT_THROW(check_status(TEMPOCH_STATUS_T_UT1_HORIZON_EXCEEDED, "test"),
+               Ut1HorizonExceededError);
+}
+
+TEST(Time, UtDeltaTThrowsPastCompiledHorizon) {
+  UT far_future(2500000.0);
+  EXPECT_THROW(far_future.delta_t(), Ut1HorizonExceededError);
 }

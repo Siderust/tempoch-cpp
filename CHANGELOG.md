@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-05-04
+
+### Changed
+
+- Updated the vendored Rust dependency line to the `tempoch 0.4.3` release.
+- Switched scale-id dispatch to the named `tempoch_ffi.h` constants instead of hard-coded integers.
+- `UT::delta_t()` now uses the checked FFI path and throws `Ut1HorizonExceededError` when the requested epoch lies beyond the compiled UT1 horizon.
+- Expanded the examples/README to demonstrate the full C++ wrapper surface and explicitly document the remaining Rust-only features.
+
 ## [0.2.0] - 2026-03-08
 
 ### Added

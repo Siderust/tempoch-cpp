@@ -199,7 +199,10 @@ public:
   template <typename U = S>
   std::enable_if_t<std::is_same_v<U, UTScale>, qtty::Second> delta_t() const {
     double jd = TimeConvertTraits<UTScale, JDScale>::convert(m_days);
-    return qtty::Second(tempoch_delta_t_seconds(jd));
+    double seconds = 0.0;
+    check_status(tempoch_delta_t_seconds_checked(jd, &seconds),
+                 "tempoch_delta_t_seconds_checked");
+    return qtty::Second(seconds);
   }
 };
 
