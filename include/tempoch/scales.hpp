@@ -79,44 +79,44 @@ namespace detail {
 template <typename S> struct ScaleIdOf;
 
 template <> struct ScaleIdOf<JDScale> {
-  static constexpr int32_t value = 0;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_JD;
 };
 template <> struct ScaleIdOf<MJDScale> {
-  static constexpr int32_t value = 1;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_MJD;
 };
 // UTC is stored as MJD days in the FFI layer (TempochScaleId::MJD = 1).
 // tempoch_time_from_utc/to_utc with scale_id=1 perform the UTC↔civil
 // conversion. This aliasing is intentional: UTC and MJD share the same
 // underlying numeric representation in the C ABI.
 template <> struct ScaleIdOf<UTCScale> {
-  static constexpr int32_t value = 1;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_MJD;
 };
 template <> struct ScaleIdOf<TDBScale> {
-  static constexpr int32_t value = 2;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_TDB;
 };
 template <> struct ScaleIdOf<TTScale> {
-  static constexpr int32_t value = 3;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_TT;
 };
 template <> struct ScaleIdOf<TAIScale> {
-  static constexpr int32_t value = 4;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_TAI;
 };
 template <> struct ScaleIdOf<TCGScale> {
-  static constexpr int32_t value = 5;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_TCG;
 };
 template <> struct ScaleIdOf<TCBScale> {
-  static constexpr int32_t value = 6;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_TCB;
 };
 template <> struct ScaleIdOf<GPSScale> {
-  static constexpr int32_t value = 7;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_GPS;
 };
 template <> struct ScaleIdOf<UTScale> {
-  static constexpr int32_t value = 8;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_UT;
 };
 template <> struct ScaleIdOf<JDEScale> {
-  static constexpr int32_t value = 9;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_JDE;
 };
 template <> struct ScaleIdOf<UnixTimeScale> {
-  static constexpr int32_t value = 10;
+  static constexpr int32_t value = TEMPOCH_SCALE_ID_T_UNIX_TIME;
 };
 
 template <typename S> inline constexpr int32_t scale_id_v = ScaleIdOf<S>::value;

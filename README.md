@@ -12,8 +12,11 @@ tempoch-cpp is a C++17 library for astronomical time primitives. It provides a h
 - Civil UTC representation with nanosecond precision via `tempoch::CivilTime`
 - Cross-scale conversion helpers such as `from_utc()`, `to_utc()`, `to_jd()`, and `to_mjd()`
 - Time arithmetic using `qtty-cpp` duration quantities such as `qtty::Day`, `qtty::Hour`, and `qtty::Minute`
+- `UT::delta_t()` with checked UT1 horizon errors from the Rust FFI
 - `Period<T>` intervals with typed start/end access, intersection, and duration conversion
 - CMake target (`tempoch_cpp`) for straightforward integration
+
+The C++ wrapper intentionally mirrors the current `tempoch-ffi` surface. Rust-only features such as `serde`, tagged wrappers, and runtime-bundle refresh/context management are not exposed in `tempoch-cpp` yet.
 
 ## Requirements
 
@@ -81,6 +84,7 @@ std::cout << dt.to<qtty::Hour>() << "\n";
 
 - `docs/mainpage.md` (API overview)
 - `examples/time_example.cpp` (basic usage)
+- `examples/timescales.cpp` (all supported scale conversions plus `ΔT`)
 - `include/tempoch/tempoch.hpp` (umbrella public header)
 
 ## Integration
