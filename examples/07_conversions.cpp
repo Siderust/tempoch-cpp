@@ -38,8 +38,7 @@ int main() {
 
   std::cout << std::fixed << std::setprecision(9);
   std::cout << "UTC          : " << utc << "\n";
-  std::cout << "Unix seconds : " << std::fixed << std::setprecision(3)
-            << ux << "\n";
+  std::cout << "Unix seconds : " << std::fixed << std::setprecision(3) << ux << "\n";
   std::cout << std::fixed << std::setprecision(9);
   std::cout << "TAI JD       : " << tai << "\n";
   std::cout << "TT JD        : " << tt << "\n";
@@ -48,8 +47,7 @@ int main() {
   std::cout << "GPS days     : " << gps << "\n"; // days since GPS epoch
 
   // GPS → TAI round-trip residual (mirrors the assert in 07_conversions.rs).
-  const double residual =
-      std::abs(tai_from_gps.value() - tai.value()) * 86'400.0;
+  const double residual = std::abs(tai_from_gps.value() - tai.value()) * 86'400.0;
   std::cout << std::scientific;
   std::cout << "GPS→TAI residual: " << residual << " s\n";
   assert(residual < 1e-9);

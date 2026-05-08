@@ -69,9 +69,7 @@ public:
    * auto jd = JulianDate::from_utc({2026, 7, 15, 22, 0, 0});
    * @endcode
    */
-  static Time from_utc(const CivilTime &ct) {
-    return Time(TimeScaleTraits<S>::from_civil(ct));
-  }
+  static Time from_utc(const CivilTime &ct) { return Time(TimeScaleTraits<S>::from_civil(ct)); }
 
   // ── Accessors ─────────────────────────────────────────────────────────
 
@@ -151,15 +149,13 @@ public:
   // ── JD-only extras (SFINAE-guarded) ───────────────────────────────────
 
   /// J2000.0 epoch (JD 2 451 545.0).  Only available for `Time<scales::JD>`.
-  template <typename U = S>
-  static std::enable_if_t<std::is_same_v<U, scales::JD>, Time> J2000() {
+  template <typename U = S> static std::enable_if_t<std::is_same_v<U, scales::JD>, Time> J2000() {
     return Time(TimeScaleTraits<scales::JD>::j2000());
   }
 
   /// Julian centuries since J2000.  Only available for `Time<scales::JD>`.
   template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, scales::JD>, double>
-  julian_centuries() const {
+  std::enable_if_t<std::is_same_v<U, scales::JD>, double> julian_centuries() const {
     return TimeScaleTraits<scales::JD>::julian_centuries(m_days);
   }
 
@@ -175,8 +171,7 @@ public:
   // ── JD ↔ MJD convenience (preserves old API surface) ──────────────────
 
   /// Convert to MJD double.  Only available for `Time<scales::JD>`.
-  template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, scales::JD>, double> to_mjd() const {
+  template <typename U = S> std::enable_if_t<std::is_same_v<U, scales::JD>, double> to_mjd() const {
     return TimeConvertTraits<scales::JD, scales::MJD>::convert(m_days);
   }
 
@@ -200,8 +195,7 @@ public:
   std::enable_if_t<std::is_same_v<U, scales::UT>, qtty::Second> delta_t() const {
     double jd = TimeConvertTraits<scales::UT, scales::JD>::convert(m_days);
     double seconds = 0.0;
-    check_status(tempoch_delta_t_seconds_checked(jd, &seconds),
-                 "tempoch_delta_t_seconds_checked");
+    check_status(tempoch_delta_t_seconds_checked(jd, &seconds), "tempoch_delta_t_seconds_checked");
     return qtty::Second(seconds);
   }
 };
@@ -210,8 +204,7 @@ public:
 // operator<<  —  streams "<label>:<value>"
 // ============================================================================
 
-template <typename S>
-inline std::ostream &operator<<(std::ostream &os, const Time<S> &t) {
+template <typename S> inline std::ostream &operator<<(std::ostream &os, const Time<S> &t) {
   return os << t.value();
 }
 

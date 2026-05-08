@@ -41,8 +41,7 @@ int main() {
 
   // ── EOP data range and point query ───────────────────────────────────────
   std::cout << std::fixed << std::setprecision(1);
-  std::cout << "EOP range    : [" << eop_start_mjd() << ", " << eop_end_mjd()
-            << "] MJD (UTC)\n";
+  std::cout << "EOP range    : [" << eop_start_mjd() << ", " << eop_end_mjd() << "] MJD (UTC)\n";
 
   // Query EOP at the probe epoch (need UTC MJD; approximate TT→UTC via MJD).
   const double probe_mjd_utc = probe_tt.to<scales::MJD>().value();
@@ -51,8 +50,7 @@ int main() {
     std::cout << "DUT1 at probe: " << eop->ut1_minus_utc << " s\n";
     if (eop->pm_xp_arcsec)
       std::cout << "PM Xp        : " << *eop->pm_xp_arcsec << " arcsec\n";
-    std::cout << "observed     : " << std::boolalpha << eop->ut1_observed
-              << "\n";
+    std::cout << "observed     : " << std::boolalpha << eop->ut1_observed << "\n";
   }
 
   return 0;

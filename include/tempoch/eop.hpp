@@ -63,9 +63,7 @@ struct EopValues {
  * @param mjd_utc UTC Modified Julian Date to query.
  * @return `true` if `eop_at(mjd_utc)` would succeed.
  */
-inline bool eop_covers(double mjd_utc) noexcept {
-  return tempoch_eop_covers(mjd_utc);
-}
+inline bool eop_covers(double mjd_utc) noexcept { return tempoch_eop_covers(mjd_utc); }
 
 /**
  * @brief Interpolate IERS EOP values at `mjd_utc`.

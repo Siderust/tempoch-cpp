@@ -41,8 +41,7 @@ int main() {
   std::cout << "overlaps : " << overlaps.size() << "\n";
   std::cout << "gaps     : " << gaps.size() << "\n";
   std::cout << "merged   : " << merged.size() << "\n";
-  std::cout << "contains 61000.5? "
-            << std::boolalpha << a[1].contains(mjd(61'000.5)) << "\n";
+  std::cout << "contains 61000.5? " << std::boolalpha << a[1].contains(mjd(61'000.5)) << "\n";
 
   auto joined = day.union_with(MJDPeriod{mjd(60'999.0), mjd(61'001.5)});
   std::cout << "union    : " << joined.size() << " period(s)\n";

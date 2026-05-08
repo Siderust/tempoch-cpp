@@ -31,9 +31,7 @@ template <> struct TimeTraits<CivilTime> {
   static double to_mjd_value(const CivilTime &t) {
     return TimeScaleTraits<scales::MJD>::from_civil(t);
   }
-  static CivilTime from_mjd_value(double m) {
-    return TimeScaleTraits<scales::MJD>::to_civil(m);
-  }
+  static CivilTime from_mjd_value(double m) { return TimeScaleTraits<scales::MJD>::to_civil(m); }
 };
 
 // ============================================================================
@@ -82,8 +80,7 @@ public:
    */
   Period(const T &start, const T &end) {
     check_status(tempoch_period_mjd_new(TimeTraits<T>::to_mjd_value(start),
-                                        TimeTraits<T>::to_mjd_value(end),
-                                        &m_inner),
+                                        TimeTraits<T>::to_mjd_value(end), &m_inner),
                  "Period::Period");
   }
 
@@ -144,8 +141,7 @@ public:
    * @return `true` when @p point is in `[start(), end())`.
    */
   bool contains(const T &point) const noexcept {
-    return tempoch_period_mjd_contains(m_inner,
-                                       TimeTraits<T>::to_mjd_value(point));
+    return tempoch_period_mjd_contains(m_inner, TimeTraits<T>::to_mjd_value(point));
   }
 
   /**
@@ -162,9 +158,8 @@ public:
   std::vector<Period<T>> union_with(const Period<T> &other) const {
     tempoch_period_mjd_t buf[2];
     std::size_t count = 0;
-    check_status(
-        tempoch_period_mjd_union(m_inner, other.m_inner, buf, &count),
-        "Period::union_with");
+    check_status(tempoch_period_mjd_union(m_inner, other.m_inner, buf, &count),
+                 "Period::union_with");
     std::vector<Period<T>> result;
     result.reserve(count);
     for (std::size_t i = 0; i < count; ++i)
@@ -184,8 +179,7 @@ public:
    * @throws PeriodListUnsortedError    If @p others is not sorted.
    * @throws PeriodListOverlappingError If @p others has overlapping intervals.
    */
-  std::vector<Period<T>>
-  complement_of(const std::vector<Period<T>> &others) const {
+  std::vector<Period<T>> complement_of(const std::vector<Period<T>> &others) const {
     std::vector<tempoch_period_mjd_t> raw;
     raw.reserve(others.size());
     for (const auto &p : others)
@@ -194,8 +188,7 @@ public:
     tempoch_period_mjd_t *out_ptr = nullptr;
     std::size_t out_count = 0;
     check_status(
-        tempoch_period_list_complement(
-            m_inner, raw.data(), raw.size(), &out_ptr, &out_count),
+        tempoch_period_list_complement(m_inner, raw.data(), raw.size(), &out_ptr, &out_count),
         "Period::complement_of");
 
     std::vector<Period<T>> result;
@@ -221,7 +214,7 @@ template <typename T> Period(T, T) -> Period<T>;
 // Convenience type aliases
 // ============================================================================
 
-using MJDPeriod = Period<MJD>; ///< Period expressed in Modified Julian Date.
+using MJDPeriod = Period<MJD>;       ///< Period expressed in Modified Julian Date.
 using JDPeriod = Period<JulianDate>; ///< Period expressed in Julian Date.
 using UTCPeriod = Period<CivilTime>; ///< Period expressed in UTC civil time.
 
@@ -238,15 +231,12 @@ using UTCPeriod = Period<CivilTime>; ///< Period expressed in UTC civil time.
  * @throws PeriodListUnsortedError    If the list is not sorted.
  * @throws PeriodListOverlappingError If the list has overlapping intervals.
  */
-template <typename T>
-inline void validate_periods(const std::vector<Period<T>> &periods) {
+template <typename T> inline void validate_periods(const std::vector<Period<T>> &periods) {
   std::vector<tempoch_period_mjd_t> raw;
   raw.reserve(periods.size());
   for (const auto &p : periods)
     raw.push_back(p.c_inner());
-  check_status(
-      tempoch_period_list_validate(raw.data(), raw.size()),
-      "validate_periods");
+  check_status(tempoch_period_list_validate(raw.data(), raw.size()), "validate_periods");
 }
 
 /**
@@ -260,21 +250,21 @@ inline void validate_periods(const std::vector<Period<T>> &periods) {
  *         if either input list is invalid.
  */
 template <typename T>
-inline std::vector<Period<T>> intersect_periods(
-    const std::vector<Period<T>> &a,
-    const std::vector<Period<T>> &b) {
+inline std::vector<Period<T>> intersect_periods(const std::vector<Period<T>> &a,
+                                                const std::vector<Period<T>> &b) {
   std::vector<tempoch_period_mjd_t> ra, rb;
   ra.reserve(a.size());
   rb.reserve(b.size());
-  for (const auto &p : a) ra.push_back(p.c_inner());
-  for (const auto &p : b) rb.push_back(p.c_inner());
+  for (const auto &p : a)
+    ra.push_back(p.c_inner());
+  for (const auto &p : b)
+    rb.push_back(p.c_inner());
 
   tempoch_period_mjd_t *out_ptr = nullptr;
   std::size_t out_count = 0;
-  check_status(
-      tempoch_period_list_intersect(
-          ra.data(), ra.size(), rb.data(), rb.size(), &out_ptr, &out_count),
-      "intersect_periods");
+  check_status(tempoch_period_list_intersect(ra.data(), ra.size(), rb.data(), rb.size(), &out_ptr,
+                                             &out_count),
+               "intersect_periods");
 
   std::vector<Period<T>> result;
   result.reserve(out_count);
@@ -297,20 +287,20 @@ inline std::vector<Period<T>> intersect_periods(
  * @throws InvalidPeriodError if any input period is malformed.
  */
 template <typename T>
-inline std::vector<Period<T>> union_periods(
-    const std::vector<Period<T>> &a,
-    const std::vector<Period<T>> &b) {
+inline std::vector<Period<T>> union_periods(const std::vector<Period<T>> &a,
+                                            const std::vector<Period<T>> &b) {
   std::vector<tempoch_period_mjd_t> ra, rb;
   ra.reserve(a.size());
   rb.reserve(b.size());
-  for (const auto &p : a) ra.push_back(p.c_inner());
-  for (const auto &p : b) rb.push_back(p.c_inner());
+  for (const auto &p : a)
+    ra.push_back(p.c_inner());
+  for (const auto &p : b)
+    rb.push_back(p.c_inner());
 
   tempoch_period_mjd_t *out_ptr = nullptr;
   std::size_t out_count = 0;
   check_status(
-      tempoch_period_list_union(
-          ra.data(), ra.size(), rb.data(), rb.size(), &out_ptr, &out_count),
+      tempoch_period_list_union(ra.data(), ra.size(), rb.data(), rb.size(), &out_ptr, &out_count),
       "union_periods");
 
   std::vector<Period<T>> result;
@@ -330,17 +320,16 @@ inline std::vector<Period<T>> union_periods(
  * @throws InvalidPeriodError if any period is malformed.
  */
 template <typename T>
-inline std::vector<Period<T>> normalize_periods(
-    const std::vector<Period<T>> &periods) {
+inline std::vector<Period<T>> normalize_periods(const std::vector<Period<T>> &periods) {
   std::vector<tempoch_period_mjd_t> raw;
   raw.reserve(periods.size());
-  for (const auto &p : periods) raw.push_back(p.c_inner());
+  for (const auto &p : periods)
+    raw.push_back(p.c_inner());
 
   tempoch_period_mjd_t *out_ptr = nullptr;
   std::size_t out_count = 0;
-  check_status(
-      tempoch_period_list_normalize(raw.data(), raw.size(), &out_ptr, &out_count),
-      "normalize_periods");
+  check_status(tempoch_period_list_normalize(raw.data(), raw.size(), &out_ptr, &out_count),
+               "normalize_periods");
 
   std::vector<Period<T>> result;
   result.reserve(out_count);
@@ -355,8 +344,7 @@ inline std::vector<Period<T>> normalize_periods(
 // ============================================================================
 
 /// Stream a Period as [start, end] using T's own operator<<.
-template <typename T>
-inline std::ostream &operator<<(std::ostream &os, const Period<T> &p) {
+template <typename T> inline std::ostream &operator<<(std::ostream &os, const Period<T> &p) {
   return os << '[' << p.start() << ", " << p.end() << ']';
 }
 
