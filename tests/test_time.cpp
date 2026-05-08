@@ -177,8 +177,8 @@ TEST(Time, UnixTimeEpochIsZeroSeconds) {
 
 TEST(Time, UnixTimeRoundtripThroughJd) {
   auto unix = UnixTime::from_utc({2000, 1, 1, 12, 0, 0});
-  auto jd = unix.to<JDScale>();
-  auto back = jd.to<UnixTimeScale>();
+  auto jd = unix.to<scales::JD>();
+  auto back = jd.to<scales::Unix>();
   EXPECT_NEAR(back.value(), unix.value(), 1e-5);
 }
 

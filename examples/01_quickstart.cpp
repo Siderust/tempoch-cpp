@@ -23,8 +23,8 @@ int main() {
 
   UTC utc_now{2026, 7, 15, 22, 0, 0};
   JulianDate jd = JulianDate::from_utc(utc_now);
-  TT tt = jd.to<TTScale>();
-  MJD mjd = jd.to<MJDScale>();
+  TT tt = jd.to<scales::TT>();
+  MJD mjd = jd.to<scales::MJD>();
 
   std::cout << std::fixed << std::setprecision(9);
   std::cout << "UTC       : " << utc_now << "\n";

@@ -29,10 +29,10 @@ namespace tempoch {
 
 template <> struct TimeTraits<CivilTime> {
   static double to_mjd_value(const CivilTime &t) {
-    return TimeScaleTraits<MJDScale>::from_civil(t);
+    return TimeScaleTraits<scales::MJD>::from_civil(t);
   }
   static CivilTime from_mjd_value(double m) {
-    return TimeScaleTraits<MJDScale>::to_civil(m);
+    return TimeScaleTraits<scales::MJD>::to_civil(m);
   }
 };
 

@@ -23,21 +23,21 @@ int main() {
   using namespace tempoch;
 
   JulianDate jd{constants::j2000_jd_tt()};
-  TT tt = jd.to<TTScale>();
-  TAI tai = tt.to<TAIScale>();
+  TT tt = jd.to<scales::TT>();
+  TAI tai = tt.to<scales::TAI>();
   UTC utc = tt.to_utc();
-  UT ut1 = tt.to<UTScale>();
-  TDB tdb = tt.to<TDBScale>();
-  TCG tcg = tt.to<TCGScale>();
-  TCB tcb = tt.to<TCBScale>();
+  UT ut1 = tt.to<scales::UT>();
+  TDB tdb = tt.to<scales::TDB>();
+  TCG tcg = tt.to<scales::TCG>();
+  TCB tcb = tt.to<scales::TCB>();
 
   std::cout << std::fixed << std::setprecision(9);
-  std::cout << "TT  JD  : " << tt.value() << "\n";
-  std::cout << "TAI JD  : " << tai.value() << "\n";
-  std::cout << "UT1 JD  : " << ut1.value() << "\n";
-  std::cout << "TDB JD  : " << tdb.value() << "\n";
-  std::cout << "TCG JD  : " << tcg.value() << "\n";
-  std::cout << "TCB JD  : " << tcb.value() << "\n";
+  std::cout << "TT  JD  : " << tt << "\n";
+  std::cout << "TAI JD  : " << tai << "\n";
+  std::cout << "UT1 JD  : " << ut1 << "\n";
+  std::cout << "TDB JD  : " << tdb << "\n";
+  std::cout << "TCG JD  : " << tcg << "\n";
+  std::cout << "TCB JD  : " << tcb << "\n";
   std::cout << "UTC     : " << utc << "\n";
 
   constexpr double SPD = 86'400.0;

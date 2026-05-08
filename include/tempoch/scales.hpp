@@ -4,6 +4,10 @@
  * @file scales.hpp
  * @brief Time-scale tag types and traits for the tempoch Time<S> template.
  *
+ * Scale tag structs live in `tempoch::scales::` (e.g., `scales::TT`,
+ * `scales::JD`).  Convenience type aliases (`TT = Time<scales::TT>` etc.)
+ * are provided in `time.hpp`.
+ *
  * Mirrors the Rust scale set while keeping the C++ API strongly typed.
  * The C ABI underneath is intentionally simpler: all generic dispatch goes
  * through `double` values plus a raw scale id.
@@ -16,44 +20,48 @@
 namespace tempoch {
 
 // ============================================================================
-// Scale Tags
+// Scale Tags — in tempoch::scales::
 // ============================================================================
 
+namespace scales {
+
 /// Julian Date (days since −4712‑01‑01T12:00 TT).
-struct JDScale {};
+struct JD {};
 
 /// Modified Julian Date (JD − 2 400 000.5).
-struct MJDScale {};
+struct MJD {};
 
 /// UTC, internally stored as MJD days for arithmetic.
-struct UTCScale {};
+struct UTC {};
 
 /// Terrestrial Time (TT), stored as JD days in TT scale.
-struct TTScale {};
+struct TT {};
 
 /// International Atomic Time (TAI), stored as JD days in TAI scale.
-struct TAIScale {};
+struct TAI {};
 
 /// Barycentric Dynamical Time (TDB), stored as JD days in TDB scale.
-struct TDBScale {};
+struct TDB {};
 
 /// Geocentric Coordinate Time (TCG), stored as JD days in TCG scale.
-struct TCGScale {};
+struct TCG {};
 
 /// Barycentric Coordinate Time (TCB), stored as JD days in TCB scale.
-struct TCBScale {};
+struct TCB {};
 
 /// GPS Time, stored as JD days in GPS scale.
-struct GPSScale {};
+struct GPS {};
 
 /// Universal Time (UT1), stored as JD days in UT1 scale.
-struct UTScale {};
+struct UT {};
 
 /// Julian Ephemeris Date (JDE ≡ TDB), stored as JD days.
-struct JDEScale {};
+struct JDE {};
 
 /// Unix Time (seconds since 1970-01-01T00:00:00 UTC), stored as Unix seconds.
-struct UnixTimeScale {};
+struct Unix {};
+
+} // namespace scales
 
 // ============================================================================
 // TimeScaleTraits — per-scale FFI dispatch
@@ -78,44 +86,44 @@ namespace detail {
 
 template <typename S> struct ScaleIdOf;
 
-template <> struct ScaleIdOf<JDScale> {
+template <> struct ScaleIdOf<scales::JD> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_JD;
 };
-template <> struct ScaleIdOf<MJDScale> {
+template <> struct ScaleIdOf<scales::MJD> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_MJD;
 };
 // UTC is stored as MJD days in the FFI layer (TempochScaleId::MJD = 1).
 // tempoch_time_from_utc/to_utc with scale_id=1 perform the UTC↔civil
 // conversion. This aliasing is intentional: UTC and MJD share the same
 // underlying numeric representation in the C ABI.
-template <> struct ScaleIdOf<UTCScale> {
+template <> struct ScaleIdOf<scales::UTC> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_MJD;
 };
-template <> struct ScaleIdOf<TDBScale> {
+template <> struct ScaleIdOf<scales::TDB> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_TDB;
 };
-template <> struct ScaleIdOf<TTScale> {
+template <> struct ScaleIdOf<scales::TT> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_TT;
 };
-template <> struct ScaleIdOf<TAIScale> {
+template <> struct ScaleIdOf<scales::TAI> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_TAI;
 };
-template <> struct ScaleIdOf<TCGScale> {
+template <> struct ScaleIdOf<scales::TCG> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_TCG;
 };
-template <> struct ScaleIdOf<TCBScale> {
+template <> struct ScaleIdOf<scales::TCB> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_TCB;
 };
-template <> struct ScaleIdOf<GPSScale> {
+template <> struct ScaleIdOf<scales::GPS> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_GPS;
 };
-template <> struct ScaleIdOf<UTScale> {
+template <> struct ScaleIdOf<scales::UT> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_UT;
 };
-template <> struct ScaleIdOf<JDEScale> {
+template <> struct ScaleIdOf<scales::JDE> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_JDE;
 };
-template <> struct ScaleIdOf<UnixTimeScale> {
+template <> struct ScaleIdOf<scales::Unix> {
   static constexpr int32_t value = TEMPOCH_SCALE_ID_T_UNIX_TIME;
 };
 
@@ -198,7 +206,7 @@ template <typename S> struct GenericScaleTraits {
 } // namespace detail
 
 template <>
-struct TimeScaleTraits<JDScale> : detail::GenericScaleTraits<JDScale> {
+struct TimeScaleTraits<scales::JD> : detail::GenericScaleTraits<scales::JD> {
   static constexpr const char *label() { return "JD"; }
 
   static double j2000() { return tempoch_jd_j2000(); }
@@ -213,58 +221,58 @@ struct TimeScaleTraits<JDScale> : detail::GenericScaleTraits<JDScale> {
 };
 
 template <>
-struct TimeScaleTraits<MJDScale> : detail::GenericScaleTraits<MJDScale> {
+struct TimeScaleTraits<scales::MJD> : detail::GenericScaleTraits<scales::MJD> {
   static constexpr const char *label() { return "MJD"; }
 };
 
 template <>
-struct TimeScaleTraits<UTCScale> : detail::GenericScaleTraits<UTCScale> {
+struct TimeScaleTraits<scales::UTC> : detail::GenericScaleTraits<scales::UTC> {
   static constexpr const char *label() { return "UTC"; }
 };
 
 template <>
-struct TimeScaleTraits<TTScale> : detail::GenericScaleTraits<TTScale> {
+struct TimeScaleTraits<scales::TT> : detail::GenericScaleTraits<scales::TT> {
   static constexpr const char *label() { return "TT"; }
 };
 
 template <>
-struct TimeScaleTraits<TAIScale> : detail::GenericScaleTraits<TAIScale> {
+struct TimeScaleTraits<scales::TAI> : detail::GenericScaleTraits<scales::TAI> {
   static constexpr const char *label() { return "TAI"; }
 };
 
 template <>
-struct TimeScaleTraits<TDBScale> : detail::GenericScaleTraits<TDBScale> {
+struct TimeScaleTraits<scales::TDB> : detail::GenericScaleTraits<scales::TDB> {
   static constexpr const char *label() { return "TDB"; }
 };
 
 template <>
-struct TimeScaleTraits<TCGScale> : detail::GenericScaleTraits<TCGScale> {
+struct TimeScaleTraits<scales::TCG> : detail::GenericScaleTraits<scales::TCG> {
   static constexpr const char *label() { return "TCG"; }
 };
 
 template <>
-struct TimeScaleTraits<TCBScale> : detail::GenericScaleTraits<TCBScale> {
+struct TimeScaleTraits<scales::TCB> : detail::GenericScaleTraits<scales::TCB> {
   static constexpr const char *label() { return "TCB"; }
 };
 
 template <>
-struct TimeScaleTraits<GPSScale> : detail::GenericScaleTraits<GPSScale> {
+struct TimeScaleTraits<scales::GPS> : detail::GenericScaleTraits<scales::GPS> {
   static constexpr const char *label() { return "GPS"; }
 };
 
 template <>
-struct TimeScaleTraits<UTScale> : detail::GenericScaleTraits<UTScale> {
+struct TimeScaleTraits<scales::UT> : detail::GenericScaleTraits<scales::UT> {
   static constexpr const char *label() { return "UT1"; }
 };
 
 template <>
-struct TimeScaleTraits<JDEScale> : detail::GenericScaleTraits<JDEScale> {
+struct TimeScaleTraits<scales::JDE> : detail::GenericScaleTraits<scales::JDE> {
   static constexpr const char *label() { return "JDE"; }
 };
 
 template <>
-struct TimeScaleTraits<UnixTimeScale>
-    : detail::GenericScaleTraits<UnixTimeScale> {
+struct TimeScaleTraits<scales::Unix>
+    : detail::GenericScaleTraits<scales::Unix> {
   static constexpr const char *label() { return "Unix"; }
 };
 

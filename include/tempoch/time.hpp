@@ -8,8 +8,8 @@
  * and `scales.hpp` (scale tags and traits).  This header provides the
  * backward-compatible names that the rest of the codebase expects:
  *
- *   - `tempoch::JulianDate`  = `Time<JDScale>`
- *   - `tempoch::MJD`         = `Time<MJDScale>`
+ *   - `tempoch::JulianDate`  = `Time<scales::JD>`
+ *   - `tempoch::MJD`         = `Time<scales::MJD>`
  *   - `tempoch::UTC`         = `CivilTime` (civil date-time breakdown)
  *   - `tempoch::CivilTime`   (canonical name for the civil struct)
  */
@@ -19,40 +19,40 @@
 namespace tempoch {
 
 /// Julian Date — days since −4712-01-01T12:00 TT.
-using JulianDate = Time<JDScale>;
+using JulianDate = Time<scales::JD>;
 
 /// Modified Julian Date — JD − 2 400 000.5.
-using MJD = Time<MJDScale>;
+using MJD = Time<scales::MJD>;
 
 /// Barycentric Dynamical Time.
-using TDB = Time<TDBScale>;
+using TDB = Time<scales::TDB>;
 
 /// Terrestrial Time.
-using TT = Time<TTScale>;
+using TT = Time<scales::TT>;
 
 /// International Atomic Time.
-using TAI = Time<TAIScale>;
+using TAI = Time<scales::TAI>;
 
 /// Geocentric Coordinate Time.
-using TCG = Time<TCGScale>;
+using TCG = Time<scales::TCG>;
 
 /// Barycentric Coordinate Time.
-using TCB = Time<TCBScale>;
+using TCB = Time<scales::TCB>;
 
 /// GPS Time.
-using GPS = Time<GPSScale>;
+using GPS = Time<scales::GPS>;
 
 /// Universal Time (UT1).
-using UT = Time<UTScale>;
+using UT = Time<scales::UT>;
 
 /// Alias — mirrors Rust's `UniversalTime`.
-using UniversalTime = Time<UTScale>;
+using UniversalTime = Time<scales::UT>;
 
 /// Julian Ephemeris Date (≡ TDB expressed as JD).
-using JDE = Time<JDEScale>;
+using JDE = Time<scales::JDE>;
 
 /// Unix (POSIX) time — seconds since 1970-01-01T00:00:00 UTC.
-using UnixTime = Time<UnixTimeScale>;
+using UnixTime = Time<scales::Unix>;
 
 // `UTC` and `CivilTime` are already declared in time_base.hpp:
 //   using UTC = CivilTime;

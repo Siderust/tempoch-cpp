@@ -47,13 +47,13 @@ int main() {
   UTC utc_from_ux = ux.to_utc();
 
   std::cout << std::fixed << std::setprecision(9);
-  std::cout << "J2000 TT JD       : " << j2000_tt.value() << "\n";
-  std::cout << "Sample TT JD      : " << sample_tt.value() << "\n";
-  std::cout << "Sample TT MJD     : " << sample_tt.to<MJDScale>().value() << "\n";
-  std::cout << "J2000 from JD     : " << j2000_from_jd.value() << "\n";
-  std::cout << "Unix epoch JD(TT) : " << unix_epoch_jd.value() << "\n";
-  std::cout << "Half-day JD(TT)   : " << half_day_jd.value() << "\n";
-  std::cout << "Unix epoch MJD(TT): " << unix_epoch_mjd.value() << "\n";
+  std::cout << "J2000 TT JD       : " << j2000_tt << "\n";
+  std::cout << "Sample TT JD      : " << sample_tt << "\n";
+  std::cout << "Sample TT MJD     : " << sample_tt.to<scales::MJD>() << "\n";
+  std::cout << "J2000 from JD     : " << j2000_from_jd << "\n";
+  std::cout << "Unix epoch JD(TT) : " << unix_epoch_jd << "\n";
+  std::cout << "Half-day JD(TT)   : " << half_day_jd << "\n";
+  std::cout << "Unix epoch MJD(TT): " << unix_epoch_mjd << "\n";
   std::cout << std::fixed << std::setprecision(3);
   std::cout << "UTC from Unix     : " << utc_from_ux << "\n";
 

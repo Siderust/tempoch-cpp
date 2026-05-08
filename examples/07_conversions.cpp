@@ -27,25 +27,25 @@ int main() {
   UTC utc = ux.to_utc();
 
   // Convert across continuous scales.
-  TAI tai = ux.to<TAIScale>();
-  TT tt = tai.to<TTScale>();
-  TDB tdb = tt.to<TDBScale>();
-  UT ut1 = ux.to<UTScale>();
+  TAI tai = ux.to<scales::TAI>();
+  TT tt = tai.to<scales::TT>();
+  TDB tdb = tt.to<scales::TDB>();
+  UT ut1 = ux.to<scales::UT>();
 
   // GPS bridge.
-  GPS gps = tai.to<GPSScale>();
-  TAI tai_from_gps = gps.to<TAIScale>();
+  GPS gps = tai.to<scales::GPS>();
+  TAI tai_from_gps = gps.to<scales::TAI>();
 
   std::cout << std::fixed << std::setprecision(9);
   std::cout << "UTC          : " << utc << "\n";
   std::cout << "Unix seconds : " << std::fixed << std::setprecision(3)
-            << ux.value() << "\n";
+            << ux << "\n";
   std::cout << std::fixed << std::setprecision(9);
-  std::cout << "TAI JD       : " << tai.value() << "\n";
-  std::cout << "TT JD        : " << tt.value() << "\n";
-  std::cout << "TDB JD       : " << tdb.value() << "\n";
-  std::cout << "UT1 JD       : " << ut1.value() << "\n";
-  std::cout << "GPS days     : " << gps.value() << "\n"; // days since GPS epoch
+  std::cout << "TAI JD       : " << tai << "\n";
+  std::cout << "TT JD        : " << tt << "\n";
+  std::cout << "TDB JD       : " << tdb << "\n";
+  std::cout << "UT1 JD       : " << ut1 << "\n";
+  std::cout << "GPS days     : " << gps << "\n"; // days since GPS epoch
 
   // GPS → TAI round-trip residual (mirrors the assert in 07_conversions.rs).
   const double residual =
