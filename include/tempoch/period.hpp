@@ -135,6 +135,77 @@ public:
     return from_c(out);
   }
 
+  /**
+   * @brief Test whether an instant falls within this period.
+   *
+   * Uses a half-open [start, end) convention consistent with the FFI layer.
+   *
+   * @param point The instant to test.
+   * @return `true` when @p point is in `[start(), end())`.
+   */
+  bool contains(const T &point) const noexcept {
+    return tempoch_period_mjd_contains(m_inner,
+                                       TimeTraits<T>::to_mjd_value(point));
+  }
+
+  /**
+   * @brief Compute the union of this period and @p other.
+   *
+   * If the two periods overlap or touch, the result is a single merged period
+   * (`result.size() == 1`).  If they are disjoint, the result contains both
+   * periods in chronological order (`result.size() == 2`).
+   *
+   * @param other The period to unite with.
+   * @return A `std::vector<Period<T>>` with one or two elements.
+   * @throws InvalidPeriodError If either period is malformed.
+   */
+  std::vector<Period<T>> union_with(const Period<T> &other) const {
+    tempoch_period_mjd_t buf[2];
+    std::size_t count = 0;
+    check_status(
+        tempoch_period_mjd_union(m_inner, other.m_inner, buf, &count),
+        "Period::union_with");
+    std::vector<Period<T>> result;
+    result.reserve(count);
+    for (std::size_t i = 0; i < count; ++i)
+      result.push_back(from_c(buf[i]));
+    return result;
+  }
+
+  /**
+   * @brief Compute the complement of a period list within this period.
+   *
+   * Returns the gaps inside `*this` that are not covered by any period in
+   * @p others.  @p others must be sorted and non-overlapping.
+   *
+   * @param others Sorted, non-overlapping inner periods (may be empty).
+   * @return The gaps as a `std::vector<Period<T>>`.
+   * @throws InvalidPeriodError        If any period is malformed.
+   * @throws PeriodListUnsortedError    If @p others is not sorted.
+   * @throws PeriodListOverlappingError If @p others has overlapping intervals.
+   */
+  std::vector<Period<T>>
+  complement_of(const std::vector<Period<T>> &others) const {
+    std::vector<tempoch_period_mjd_t> raw;
+    raw.reserve(others.size());
+    for (const auto &p : others)
+      raw.push_back(p.c_inner());
+
+    tempoch_period_mjd_t *out_ptr = nullptr;
+    std::size_t out_count = 0;
+    check_status(
+        tempoch_period_list_complement(
+            m_inner, raw.data(), raw.size(), &out_ptr, &out_count),
+        "Period::complement_of");
+
+    std::vector<Period<T>> result;
+    result.reserve(out_count);
+    for (std::size_t i = 0; i < out_count; ++i)
+      result.push_back(from_c(out_ptr[i]));
+    tempoch_period_mjd_free(out_ptr, out_count);
+    return result;
+  }
+
   /// Access the underlying FFI POD value.
   const tempoch_period_mjd_t &c_inner() const { return m_inner; }
 };
@@ -153,6 +224,131 @@ template <typename T> Period(T, T) -> Period<T>;
 using MJDPeriod = Period<MJD>; ///< Period expressed in Modified Julian Date.
 using JDPeriod = Period<JulianDate>; ///< Period expressed in Julian Date.
 using UTCPeriod = Period<CivilTime>; ///< Period expressed in UTC civil time.
+
+// ============================================================================
+// Period list free functions
+// ============================================================================
+
+/**
+ * @brief Validate that a list of periods is sorted and non-overlapping.
+ *
+ * @tparam T Time type (e.g. `MJD`, `JulianDate`, `CivilTime`).
+ * @param periods The list to check (may be empty).
+ * @throws InvalidPeriodError        If any period has start > end.
+ * @throws PeriodListUnsortedError    If the list is not sorted.
+ * @throws PeriodListOverlappingError If the list has overlapping intervals.
+ */
+template <typename T>
+inline void validate_periods(const std::vector<Period<T>> &periods) {
+  std::vector<tempoch_period_mjd_t> raw;
+  raw.reserve(periods.size());
+  for (const auto &p : periods)
+    raw.push_back(p.c_inner());
+  check_status(
+      tempoch_period_list_validate(raw.data(), raw.size()),
+      "validate_periods");
+}
+
+/**
+ * @brief Intersect two sorted, non-overlapping period lists.
+ *
+ * @tparam T Time type.
+ * @param a First sorted, non-overlapping list.
+ * @param b Second sorted, non-overlapping list.
+ * @return Sorted intersection of the two lists.
+ * @throws InvalidPeriodError, PeriodListUnsortedError, PeriodListOverlappingError
+ *         if either input list is invalid.
+ */
+template <typename T>
+inline std::vector<Period<T>> intersect_periods(
+    const std::vector<Period<T>> &a,
+    const std::vector<Period<T>> &b) {
+  std::vector<tempoch_period_mjd_t> ra, rb;
+  ra.reserve(a.size());
+  rb.reserve(b.size());
+  for (const auto &p : a) ra.push_back(p.c_inner());
+  for (const auto &p : b) rb.push_back(p.c_inner());
+
+  tempoch_period_mjd_t *out_ptr = nullptr;
+  std::size_t out_count = 0;
+  check_status(
+      tempoch_period_list_intersect(
+          ra.data(), ra.size(), rb.data(), rb.size(), &out_ptr, &out_count),
+      "intersect_periods");
+
+  std::vector<Period<T>> result;
+  result.reserve(out_count);
+  for (std::size_t i = 0; i < out_count; ++i)
+    result.push_back(Period<T>::from_c(out_ptr[i]));
+  tempoch_period_mjd_free(out_ptr, out_count);
+  return result;
+}
+
+/**
+ * @brief Merge two period lists, combining overlapping and adjacent intervals.
+ *
+ * The inputs need not be sorted or non-overlapping; the output is always
+ * sorted and non-overlapping.
+ *
+ * @tparam T Time type.
+ * @param a First list.
+ * @param b Second list.
+ * @return Merged, normalised period list.
+ * @throws InvalidPeriodError if any input period is malformed.
+ */
+template <typename T>
+inline std::vector<Period<T>> union_periods(
+    const std::vector<Period<T>> &a,
+    const std::vector<Period<T>> &b) {
+  std::vector<tempoch_period_mjd_t> ra, rb;
+  ra.reserve(a.size());
+  rb.reserve(b.size());
+  for (const auto &p : a) ra.push_back(p.c_inner());
+  for (const auto &p : b) rb.push_back(p.c_inner());
+
+  tempoch_period_mjd_t *out_ptr = nullptr;
+  std::size_t out_count = 0;
+  check_status(
+      tempoch_period_list_union(
+          ra.data(), ra.size(), rb.data(), rb.size(), &out_ptr, &out_count),
+      "union_periods");
+
+  std::vector<Period<T>> result;
+  result.reserve(out_count);
+  for (std::size_t i = 0; i < out_count; ++i)
+    result.push_back(Period<T>::from_c(out_ptr[i]));
+  tempoch_period_mjd_free(out_ptr, out_count);
+  return result;
+}
+
+/**
+ * @brief Sort and merge overlapping or adjacent periods in a single list.
+ *
+ * @tparam T Time type.
+ * @param periods The list to normalise (may be unsorted / overlapping).
+ * @return Sorted, non-overlapping list.
+ * @throws InvalidPeriodError if any period is malformed.
+ */
+template <typename T>
+inline std::vector<Period<T>> normalize_periods(
+    const std::vector<Period<T>> &periods) {
+  std::vector<tempoch_period_mjd_t> raw;
+  raw.reserve(periods.size());
+  for (const auto &p : periods) raw.push_back(p.c_inner());
+
+  tempoch_period_mjd_t *out_ptr = nullptr;
+  std::size_t out_count = 0;
+  check_status(
+      tempoch_period_list_normalize(raw.data(), raw.size(), &out_ptr, &out_count),
+      "normalize_periods");
+
+  std::vector<Period<T>> result;
+  result.reserve(out_count);
+  for (std::size_t i = 0; i < out_count; ++i)
+    result.push_back(Period<T>::from_c(out_ptr[i]));
+  tempoch_period_mjd_free(out_ptr, out_count);
+  return result;
+}
 
 // ============================================================================
 // operator<<
