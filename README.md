@@ -107,6 +107,60 @@ find_package(tempoch_cpp REQUIRED)
 target_link_libraries(your_target PRIVATE tempoch::tempoch_cpp)
 ```
 
+## Deployment
+
+Packages for Debian/Ubuntu (`.deb`) and RHEL/Fedora/openSUSE (`.rpm`) are built
+with CPack.
+
+### Prerequisites
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install cmake ninja-build rpm
+
+# RHEL/Fedora
+sudo dnf install cmake ninja-build dpkg
+```
+
+### Build the packages
+
+```bash
+git clone --recurse-submodules <repo-url>
+cd tempoch-cpp
+
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DTEMPOCH_BUILD_DOCS=OFF
+cmake --build build --parallel
+
+# Install headers + cmake config to a staging prefix
+cmake --install build --prefix build/staging
+
+# Generate .deb and .rpm in build/packages/
+cd build
+cpack --config CPackConfig.cmake -G "DEB;RPM" -B packages
+ls packages/
+```
+
+### Install on the target system
+
+```bash
+# Debian/Ubuntu
+sudo dpkg -i packages/tempoch-cpp-*.deb
+
+# RHEL/Fedora/openSUSE
+sudo rpm -i packages/tempoch-cpp-*.rpm
+```
+
+After installation, headers land in `/usr/local/include/tempoch/` and the
+shared library in `/usr/local/lib/`.  CMake consumers can then use:
+
+```cmake
+find_package(tempoch_cpp REQUIRED)
+target_link_libraries(your_target PRIVATE tempoch::tempoch_cpp)
+```
+
+> **Note:** Pre-built `.deb` and `.rpm` packages are also automatically attached
+> to every [GitHub Release](https://github.com/Siderust/tempoch-cpp/releases).
+
 ## License
 
 This repository wraps the upstream `tempoch` project (git submodule in `tempoch/`). See `tempoch/LICENSE` for licensing details.

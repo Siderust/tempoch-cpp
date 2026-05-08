@@ -233,3 +233,36 @@ install(EXPORT tempoch_cppTargets
     NAMESPACE tempoch::
     DESTINATION lib/cmake/tempoch_cpp
 )
+
+# ---------------------------------------------------------------------------
+# Packaging (CPack — DEB and RPM)
+# ---------------------------------------------------------------------------
+set(CPACK_PACKAGE_NAME             "tempoch-cpp")
+set(CPACK_PACKAGE_VERSION          "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_VENDOR           "Siderust")
+set(CPACK_PACKAGE_CONTACT          "VPRamon <vallespuigramon@gmail.com>")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+    "C++ wrapper for the tempoch astronomical time library")
+set(CPACK_PACKAGE_DESCRIPTION
+    "tempoch-cpp provides a header-only C++17 API over the tempoch Rust\n"
+    "time library via the tempoch-ffi C ABI.  It bundles the pre-built\n"
+    "shared library (tempoch_ffi) together with the C++ headers and CMake\n"
+    "package config.")
+set(CPACK_RESOURCE_FILE_LICENSE    "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_HOMEPAGE_URL     "https://github.com/Siderust/tempoch-cpp")
+
+# -- DEB -----------------------------------------------------------------------
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "VPRamon <vallespuigramon@gmail.com>")
+set(CPACK_DEBIAN_PACKAGE_SECTION    "libs")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS    "libc6 (>= 2.17), libstdc++6 (>= 9)")
+set(CPACK_DEBIAN_FILE_NAME          DEB-DEFAULT)
+
+# -- RPM -----------------------------------------------------------------------
+set(CPACK_RPM_PACKAGE_LICENSE    "AGPL-3.0")
+set(CPACK_RPM_PACKAGE_GROUP      "Development/Libraries")
+set(CPACK_RPM_PACKAGE_REQUIRES   "glibc >= 2.17, libstdc++ >= 9")
+set(CPACK_RPM_FILE_NAME          RPM-DEFAULT)
+
+set(CPACK_GENERATOR "DEB;RPM")
+
+include(CPack)
