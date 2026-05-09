@@ -58,8 +58,7 @@ public:
  */
 class NoIntersectionError : public TempochException {
 public:
-  explicit NoIntersectionError(const std::string &msg)
-      : TempochException(msg) {}
+  explicit NoIntersectionError(const std::string &msg) : TempochException(msg) {}
 };
 
 /**
@@ -67,8 +66,7 @@ public:
  */
 class InvalidScaleIdError : public TempochException {
 public:
-  explicit InvalidScaleIdError(const std::string &msg)
-      : TempochException(msg) {}
+  explicit InvalidScaleIdError(const std::string &msg) : TempochException(msg) {}
 };
 
 /**
@@ -76,8 +74,7 @@ public:
  */
 class InvalidDurationUnitError : public TempochException {
 public:
-  explicit InvalidDurationUnitError(const std::string &msg)
-      : TempochException(msg) {}
+  explicit InvalidDurationUnitError(const std::string &msg) : TempochException(msg) {}
 };
 
 /**
@@ -93,8 +90,27 @@ public:
  */
 class Ut1HorizonExceededError : public TempochException {
 public:
-  explicit Ut1HorizonExceededError(const std::string &msg)
-      : TempochException(msg) {}
+  explicit Ut1HorizonExceededError(const std::string &msg) : TempochException(msg) {}
+};
+
+/**
+ * @brief The period list is not sorted by start time.
+ *
+ * Thrown by list operations that require pre-sorted input.
+ */
+class PeriodListUnsortedError : public TempochException {
+public:
+  explicit PeriodListUnsortedError(const std::string &msg) : TempochException(msg) {}
+};
+
+/**
+ * @brief The period list contains overlapping intervals.
+ *
+ * Thrown by list operations that require non-overlapping input.
+ */
+class PeriodListOverlappingError : public TempochException {
+public:
+  explicit PeriodListOverlappingError(const std::string &msg) : TempochException(msg) {}
 };
 
 // ============================================================================
@@ -126,9 +142,12 @@ inline void check_status(tempoch_status_t status, const char *operation) {
     throw InternalPanicError(msg + "internal panic");
   case TEMPOCH_STATUS_T_UT1_HORIZON_EXCEEDED:
     throw Ut1HorizonExceededError(msg + "UT1 horizon exceeded");
+  case TEMPOCH_STATUS_T_PERIOD_LIST_UNSORTED:
+    throw PeriodListUnsortedError(msg + "period list is not sorted");
+  case TEMPOCH_STATUS_T_PERIOD_LIST_OVERLAPPING:
+    throw PeriodListOverlappingError(msg + "period list has overlapping intervals");
   default:
-    throw TempochException(msg + "unknown error (" + std::to_string(status) +
-                           ")");
+    throw TempochException(msg + "unknown error (" + std::to_string(status) + ")");
   }
 }
 
