@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  checks: write
+  pull-requests: write
+
+jobs:
+  lint-cpp:
+    uses: ./.github/workflows/ci-lint.yml
+
+  build-test-docs:
+    uses: ./.github/workflows/ci-build-test-docs.yml
+
+  coverage:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    uses: ./.github/workflows/ci-coverage.yml
+
+  package:
+    needs: build-test-docs
+    uses: ./.github/workflows/ci-package.yml
+
+  release:
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/ci-release.yml
+    secrets:
+      PAGES_DEPLOY_TOKEN: ${{ secrets.PAGES_DEPLOY_TOKEN }}
