@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-05-09
+
+### Added
+
+- CI workflows and local CI scripts: linting (clang-format, clang-tidy), build, test, coverage, packaging, and release automation.
+- Repository scripts: `scripts/fmt.sh`, `scripts/lint.sh`, `scripts/build.sh`, `scripts/test.sh`, `scripts/docs.sh`, `scripts/coverage.sh`, `scripts/ci.sh`, and `scripts/lib.sh` to standardize developer and CI tasks.
+- GitHub Actions workflow for C++ linting: `.github/workflows/ci-lint.yml` (clang-format + clang-tidy checks).
+
+### Changed
+
+- Refactor: tempoch time-scale internals were refactored to simplify scale dispatch and improve maintainability; related CI scripts and CMake flags were updated accordingly.
+- Chore: removed example artifacts `time_example` and `timescales` from the repository packaging.
+
 ## [0.2.1] - 2026-05-04
 
 ### Changed
