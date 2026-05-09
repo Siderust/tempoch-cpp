@@ -142,25 +142,24 @@ FetchContent_MakeAvailable(googletest)
 # Enable testing
 enable_testing()
 
-# Examples
-add_executable(time_example examples/time_example.cpp)
-target_link_libraries(time_example PRIVATE tempoch_cpp)
-if(DEFINED _tempoch_rpath)
-    set_target_properties(time_example PROPERTIES
-        BUILD_RPATH ${_tempoch_rpath}
-        INSTALL_RPATH ${_tempoch_rpath}
-    )
-endif()
-
-# All time-scale types: JD, MJD, TDB, TT, TAI, TCG, TCB, GPS, UT, JDE, UnixTime
-add_executable(timescales examples/timescales.cpp)
-target_link_libraries(timescales PRIVATE tempoch_cpp)
-if(DEFINED _tempoch_rpath)
-    set_target_properties(timescales PROPERTIES
-        BUILD_RPATH ${_tempoch_rpath}
-        INSTALL_RPATH ${_tempoch_rpath}
-    )
-endif()
+# Examples — numbered to mirror the tempoch Rust crate examples.
+foreach(_ex
+    01_quickstart   # Quick start: UTC → TT, JD, MJD
+    02_scales       # All scale conversions from J2000.0 TT
+    03_formats      # Constructor / accessor showcase for Time<S>
+    04_periods      # Period list operations: complement, intersect, normalize
+    06_runtime_tables # EOP table access, UT1 conversion, constants
+    07_conversions  # Full chain: Unix → UTC → TAI → TT → TDB / UT1 / GPS
+)
+    add_executable(${_ex} examples/${_ex}.cpp)
+    target_link_libraries(${_ex} PRIVATE tempoch_cpp)
+    if(DEFINED _tempoch_rpath)
+        set_target_properties(${_ex} PROPERTIES
+            BUILD_RPATH ${_tempoch_rpath}
+            INSTALL_RPATH ${_tempoch_rpath}
+        )
+    endif()
+endforeach()
 
 # Test executables with Google Test
 set(TEST_SOURCES

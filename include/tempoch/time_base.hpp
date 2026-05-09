@@ -33,9 +33,9 @@ namespace tempoch {
  * @tparam S A scale tag for which `TimeScaleTraits<S>` is specialised.
  *
  * @code
- * using JulianDate = tempoch::Time<tempoch::JDScale>;
+ * using JulianDate = tempoch::Time<tempoch::scales::JD>;
  * auto jd = JulianDate::from_utc({2026, 7, 15, 22, 0, 0});
- * auto mjd = jd.to<tempoch::MJDScale>();
+ * auto mjd = jd.to<tempoch::scales::MJD>();
  * @endcode
  */
 template <typename S> class Time {
@@ -69,9 +69,7 @@ public:
    * auto jd = JulianDate::from_utc({2026, 7, 15, 22, 0, 0});
    * @endcode
    */
-  static Time from_utc(const CivilTime &ct) {
-    return Time(TimeScaleTraits<S>::from_civil(ct));
-  }
+  static Time from_utc(const CivilTime &ct) { return Time(TimeScaleTraits<S>::from_civil(ct)); }
 
   // ── Accessors ─────────────────────────────────────────────────────────
 
@@ -150,58 +148,54 @@ public:
 
   // ── JD-only extras (SFINAE-guarded) ───────────────────────────────────
 
-  /// J2000.0 epoch (JD 2 451 545.0).  Only available for `Time<JDScale>`.
-  template <typename U = S>
-  static std::enable_if_t<std::is_same_v<U, JDScale>, Time> J2000() {
-    return Time(TimeScaleTraits<JDScale>::j2000());
+  /// J2000.0 epoch (JD 2 451 545.0).  Only available for `Time<scales::JD>`.
+  template <typename U = S> static std::enable_if_t<std::is_same_v<U, scales::JD>, Time> J2000() {
+    return Time(TimeScaleTraits<scales::JD>::j2000());
   }
 
-  /// Julian centuries since J2000.  Only available for `Time<JDScale>`.
+  /// Julian centuries since J2000.  Only available for `Time<scales::JD>`.
   template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, JDScale>, double>
-  julian_centuries() const {
-    return TimeScaleTraits<JDScale>::julian_centuries(m_days);
+  std::enable_if_t<std::is_same_v<U, scales::JD>, double> julian_centuries() const {
+    return TimeScaleTraits<scales::JD>::julian_centuries(m_days);
   }
 
   /// Julian centuries since J2000 as a typed quantity.
-  /// Only for `Time<JDScale>`.
+  /// Only for `Time<scales::JD>`.
   template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, JDScale>, qtty::JulianCentury>
+  std::enable_if_t<std::is_same_v<U, scales::JD>, qtty::JulianCentury>
   julian_centuries_qty() const {
-    auto qty = TimeScaleTraits<JDScale>::julian_centuries_qty(m_days);
+    auto qty = TimeScaleTraits<scales::JD>::julian_centuries_qty(m_days);
     return qtty::JulianCentury(qty.value);
   }
 
   // ── JD ↔ MJD convenience (preserves old API surface) ──────────────────
 
-  /// Convert to MJD double.  Only available for `Time<JDScale>`.
-  template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, JDScale>, double> to_mjd() const {
-    return TimeConvertTraits<JDScale, MJDScale>::convert(m_days);
+  /// Convert to MJD double.  Only available for `Time<scales::JD>`.
+  template <typename U = S> std::enable_if_t<std::is_same_v<U, scales::JD>, double> to_mjd() const {
+    return TimeConvertTraits<scales::JD, scales::MJD>::convert(m_days);
   }
 
-  /// Create from a JulianDate.  Only available for `Time<MJDScale>`.
+  /// Create from a JulianDate.  Only available for `Time<scales::MJD>`.
   template <typename U = S>
-  static std::enable_if_t<std::is_same_v<U, MJDScale>, Time>
-  from_jd(const Time<JDScale> &jd) {
-    return Time(TimeConvertTraits<JDScale, MJDScale>::convert(jd.value()));
+  static std::enable_if_t<std::is_same_v<U, scales::MJD>, Time>
+  from_jd(const Time<scales::JD> &jd) {
+    return Time(TimeConvertTraits<scales::JD, scales::MJD>::convert(jd.value()));
   }
 
-  /// Convert to JulianDate.  Only available for `Time<MJDScale>`.
+  /// Convert to JulianDate.  Only available for `Time<scales::MJD>`.
   template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, MJDScale>, Time<JDScale>> to_jd() const {
-    return Time<JDScale>(TimeConvertTraits<MJDScale, JDScale>::convert(m_days));
+  std::enable_if_t<std::is_same_v<U, scales::MJD>, Time<scales::JD>> to_jd() const {
+    return Time<scales::JD>(TimeConvertTraits<scales::MJD, scales::JD>::convert(m_days));
   }
 
   // ── UT-only extras (SFINAE-guarded) ───────────────────────────────────
 
-  /// ΔT = TT − UT1 in seconds.  Only available for `Time<UTScale>`.
+  /// ΔT = TT − UT1 in seconds.  Only available for `Time<scales::UT>`.
   template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, UTScale>, qtty::Second> delta_t() const {
-    double jd = TimeConvertTraits<UTScale, JDScale>::convert(m_days);
+  std::enable_if_t<std::is_same_v<U, scales::UT>, qtty::Second> delta_t() const {
+    double jd = TimeConvertTraits<scales::UT, scales::JD>::convert(m_days);
     double seconds = 0.0;
-    check_status(tempoch_delta_t_seconds_checked(jd, &seconds),
-                 "tempoch_delta_t_seconds_checked");
+    check_status(tempoch_delta_t_seconds_checked(jd, &seconds), "tempoch_delta_t_seconds_checked");
     return qtty::Second(seconds);
   }
 };
@@ -210,8 +204,7 @@ public:
 // operator<<  —  streams "<label>:<value>"
 // ============================================================================
 
-template <typename S>
-inline std::ostream &operator<<(std::ostream &os, const Time<S> &t) {
+template <typename S> inline std::ostream &operator<<(std::ostream &os, const Time<S> &t) {
   return os << t.value();
 }
 
@@ -225,18 +218,18 @@ template <typename T> struct TimeTraits;
 /// Generic TimeTraits for any Time<S>.  Converts via MJD internally.
 template <typename S> struct TimeTraits<Time<S>> {
   static double to_mjd_value(const Time<S> &t) {
-    if constexpr (std::is_same_v<S, MJDScale> || std::is_same_v<S, UTCScale>) {
+    if constexpr (std::is_same_v<S, scales::MJD> || std::is_same_v<S, scales::UTC>) {
       return t.value();
     } else {
-      return t.template to<MJDScale>().value();
+      return t.template to<scales::MJD>().value();
     }
   }
 
   static Time<S> from_mjd_value(double mjd) {
-    if constexpr (std::is_same_v<S, MJDScale> || std::is_same_v<S, UTCScale>) {
+    if constexpr (std::is_same_v<S, scales::MJD> || std::is_same_v<S, scales::UTC>) {
       return Time<S>(mjd);
     } else {
-      return Time<MJDScale>(mjd).template to<S>();
+      return Time<scales::MJD>(mjd).template to<S>();
     }
   }
 };
