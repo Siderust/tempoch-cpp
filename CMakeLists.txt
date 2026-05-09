@@ -235,40 +235,43 @@ install(EXPORT tempoch_cppTargets
 
 # ---------------------------------------------------------------------------
 # Packaging (CPack — DEB and RPM)
+# Only define package metadata when tempoch-cpp is the top-level project.
 # ---------------------------------------------------------------------------
-set(CPACK_PACKAGE_NAME             "tempoch-cpp")
-set(CPACK_PACKAGE_VERSION          "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_VENDOR           "Siderust")
-set(CPACK_PACKAGE_CONTACT          "VPRamon <vallespuigramon@gmail.com>")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
-    "C++ wrapper for the tempoch astronomical time library")
-set(CPACK_PACKAGE_DESCRIPTION
-    "tempoch-cpp provides a header-only C++17 API over the Rust tempoch\n"
-    "library via the tempoch-ffi C ABI. It bundles the public C++ headers,\n"
-    "the tempoch_ffi shared library, and CMake package configuration files.")
-set(CPACK_RESOURCE_FILE_LICENSE    "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
-set(CPACK_PACKAGE_HOMEPAGE_URL     "https://github.com/Siderust/tempoch-cpp")
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    set(CPACK_PACKAGE_NAME             "tempoch-cpp")
+    set(CPACK_PACKAGE_VERSION          "${PROJECT_VERSION}")
+    set(CPACK_PACKAGE_VENDOR           "Siderust")
+    set(CPACK_PACKAGE_CONTACT          "VPRamon <vallespuigramon@gmail.com>")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+        "C++ wrapper for the tempoch astronomical time library")
+    set(CPACK_PACKAGE_DESCRIPTION
+        "tempoch-cpp provides a header-only C++17 API over the Rust tempoch\n"
+        "library via the tempoch-ffi C ABI. It bundles the public C++ headers,\n"
+        "the tempoch_ffi shared library, and CMake package configuration files.")
+    set(CPACK_RESOURCE_FILE_LICENSE    "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+    set(CPACK_PACKAGE_HOMEPAGE_URL     "https://github.com/Siderust/tempoch-cpp")
 
-# Keep version components aligned with the top-level project even when
-# subprojects define their own versions.
-set(CPACK_PACKAGE_VERSION_MAJOR    "${PROJECT_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR    "${PROJECT_VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH    "${PROJECT_VERSION_PATCH}")
+    # Keep version components aligned with the top-level project even when
+    # subprojects define their own versions.
+    set(CPACK_PACKAGE_VERSION_MAJOR    "${PROJECT_VERSION_MAJOR}")
+    set(CPACK_PACKAGE_VERSION_MINOR    "${PROJECT_VERSION_MINOR}")
+    set(CPACK_PACKAGE_VERSION_PATCH    "${PROJECT_VERSION_PATCH}")
 
-# -- DEB -----------------------------------------------------------------------
-set(CPACK_DEBIAN_PACKAGE_NAME        "tempoch-cpp")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER  "VPRamon <vallespuigramon@gmail.com>")
-set(CPACK_DEBIAN_PACKAGE_SECTION     "libs")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS     "libc6 (>= 2.17), libstdc++6 (>= 9)")
-set(CPACK_DEBIAN_FILE_NAME           DEB-DEFAULT)
+    # -- DEB -----------------------------------------------------------------------
+    set(CPACK_DEBIAN_PACKAGE_NAME        "tempoch-cpp")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER  "VPRamon <vallespuigramon@gmail.com>")
+    set(CPACK_DEBIAN_PACKAGE_SECTION     "libs")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS     "libc6 (>= 2.17), libstdc++6 (>= 9)")
+    set(CPACK_DEBIAN_FILE_NAME           DEB-DEFAULT)
 
-# -- RPM -----------------------------------------------------------------------
-set(CPACK_RPM_PACKAGE_NAME        "tempoch-cpp")
-set(CPACK_RPM_PACKAGE_LICENSE     "AGPL-3.0")
-set(CPACK_RPM_PACKAGE_GROUP       "Development/Libraries")
-set(CPACK_RPM_PACKAGE_REQUIRES    "glibc >= 2.17, libstdc++ >= 9")
-set(CPACK_RPM_FILE_NAME           RPM-DEFAULT)
+    # -- RPM -----------------------------------------------------------------------
+    set(CPACK_RPM_PACKAGE_NAME        "tempoch-cpp")
+    set(CPACK_RPM_PACKAGE_LICENSE     "AGPL-3.0")
+    set(CPACK_RPM_PACKAGE_GROUP       "Development/Libraries")
+    set(CPACK_RPM_PACKAGE_REQUIRES    "glibc >= 2.17, libstdc++ >= 9")
+    set(CPACK_RPM_FILE_NAME           RPM-DEFAULT)
 
-set(CPACK_GENERATOR "DEB;RPM")
+    set(CPACK_GENERATOR "DEB;RPM")
 
-include(CPack)
+    include(CPack)
+endif()
