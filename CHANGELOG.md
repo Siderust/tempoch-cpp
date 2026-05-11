@@ -16,6 +16,19 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   eliminates file-conflict errors such as
   `trying to overwrite '/usr/include/tempoch/ffi_core.hpp'` when both packages
   are installed simultaneously.
+- GitHub Actions `build-test-docs` and `coverage` now run the repository
+  helper scripts and build the correct `test_tempoch` target instead of the
+  non-existent `test_ffi` target.
+- `scripts/fmt.sh` now delegates to `scripts/lint.sh` instead of referencing a
+  missing `./clang_format.sh` helper, so local `scripts/ci.sh fmt` / `all`
+  runs use the same clang-format and clang-tidy pipeline as CI.
+- `docs/Doxyfile.in` no longer points `PROJECT_LOGO` at a missing
+  `../../public/logo.png`, eliminating a Doxygen configuration error from the
+  docs build.
+- Documentation targets are now project-specific: `tempoch-cpp` disables nested
+  `qtty-cpp` docs when vendored and builds its own `tempoch_docs` target, with
+  `docs` kept only as the top-level alias. This prevents nested subprojects
+  from hijacking `cmake --build ... --target docs`.
 
 ### Changed
 

@@ -11,7 +11,7 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [--check|--fix]
 
-Runs clang-format over C++ sources (wrapper around repo clang_format.sh)
+Compatibility wrapper around scripts/lint.sh.
 EOF
 }
 
@@ -39,10 +39,6 @@ done
 
 ensure_repo_root
 
-if [[ "${MODE}" == "fix" ]]; then
-  ./clang_format.sh --fix
-else
-  ./clang_format.sh --check
-fi
+"${SCRIPT_DIR}/lint.sh" "--${MODE}"
 
-ok "clang-format ${MODE} finished"
+ok "lint ${MODE} finished"

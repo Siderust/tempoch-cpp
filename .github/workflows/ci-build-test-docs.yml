@@ -84,16 +84,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cmake --build build --target test_ffi
+          ./scripts/build.sh --build-dir build --docs on --target test_tempoch --parallel "${CMAKE_BUILD_PARALLEL_LEVEL:-2}"
 
       - name: Test (ctest)
         shell: bash
         run: |
           set -euo pipefail
-          ctest --test-dir build --output-on-failure -L tempoch_cpp
+          ./scripts/test.sh --build-dir build --label tempoch_cpp
 
       - name: Build docs (Doxygen)
         shell: bash
         run: |
           set -euo pipefail
-          cmake --build build --target docs
+          ./scripts/docs.sh --build-dir build
