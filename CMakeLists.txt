@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(tempoch_cpp VERSION 0.3.0 LANGUAGES CXX)
+project(tempoch_cpp VERSION 0.3.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -84,7 +84,11 @@ target_include_directories(tempoch_cpp INTERFACE
     $<BUILD_INTERFACE:${TEMPOCH_FFI_INCLUDE_DIR}>
     $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(tempoch_cpp INTERFACE tempoch_ffi qtty_cpp)
+target_link_libraries(tempoch_cpp INTERFACE
+    tempoch_ffi
+    $<BUILD_INTERFACE:qtty_cpp>
+    $<INSTALL_INTERFACE:qtty::qtty_cpp>
+)
 add_dependencies(tempoch_cpp build_tempoch_ffi)
 
 # Doxygen documentation
@@ -137,6 +141,9 @@ FetchContent_Declare(
     GIT_TAG v1.14.0
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+# Prevent GTest/GMock install rules from appearing in cmake --install / CPack.
+set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+set(INSTALL_GMOCK OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Enable testing
@@ -185,64 +192,65 @@ gtest_discover_tests(test_tempoch
 
 endif() # CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
 
-# Installation rules
-install(DIRECTORY include/tempoch
-    DESTINATION include
-    COMPONENT tempoch-cpp
-    FILES_MATCHING PATTERN "*.hpp"
-)
-
-install(DIRECTORY ${TEMPOCH_FFI_INCLUDE_DIR}/
-    DESTINATION include
-    COMPONENT tempoch-cpp
-    FILES_MATCHING PATTERN "*.h"
-)
-
-# Install the tempoch_ffi shared library
-install(FILES ${TEMPOCH_LIBRARY_PATH}
-    DESTINATION lib
-    COMPONENT tempoch-cpp
-)
-
-# Install CMake config files for find_package support
-include(CMakePackageConfigHelpers)
-
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tempoch_cppConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/tempoch_cppConfig.cmake
-    INSTALL_DESTINATION lib/cmake/tempoch_cpp
-)
-
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/tempoch_cppConfigVersion.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/tempoch_cppConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/tempoch_cppConfigVersion.cmake
-    DESTINATION lib/cmake/tempoch_cpp
-    COMPONENT tempoch-cpp
-)
-
-install(TARGETS tempoch_cpp
-    EXPORT tempoch_cppTargets
-    INCLUDES DESTINATION include
-)
-
-install(EXPORT tempoch_cppTargets
-    FILE tempoch_cppTargets.cmake
-    NAMESPACE tempoch::
-    DESTINATION lib/cmake/tempoch_cpp
-    COMPONENT tempoch-cpp
-)
-
 # ---------------------------------------------------------------------------
-# Packaging (CPack — DEB and RPM)
-# Only define package metadata when tempoch-cpp is the top-level project.
+# Installation and Packaging (CPack — DEB and RPM)
+# Only active when tempoch-cpp is the top-level project.  When used as a
+# subdirectory the install rules are intentionally suppressed so that
+# parent packages (siderust-cpp) do not accidentally include tempoch-cpp
+# artifacts and create file conflicts on the target system.
 # ---------------------------------------------------------------------------
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+
+    install(DIRECTORY include/tempoch
+        DESTINATION include
+        COMPONENT tempoch-cpp
+        FILES_MATCHING PATTERN "*.hpp"
+    )
+
+    install(DIRECTORY ${TEMPOCH_FFI_INCLUDE_DIR}/
+        DESTINATION include
+        COMPONENT tempoch-cpp
+        FILES_MATCHING PATTERN "*.h"
+    )
+
+    install(FILES ${TEMPOCH_LIBRARY_PATH}
+        DESTINATION lib
+        COMPONENT tempoch-cpp
+    )
+
+    include(CMakePackageConfigHelpers)
+
+    configure_package_config_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tempoch_cppConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/tempoch_cppConfig.cmake
+        INSTALL_DESTINATION lib/cmake/tempoch_cpp
+    )
+
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/tempoch_cppConfigVersion.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/tempoch_cppConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/tempoch_cppConfigVersion.cmake
+        DESTINATION lib/cmake/tempoch_cpp
+        COMPONENT tempoch-cpp
+    )
+
+    install(TARGETS tempoch_cpp
+        EXPORT tempoch_cppTargets
+        INCLUDES DESTINATION include
+    )
+
+    install(EXPORT tempoch_cppTargets
+        FILE tempoch_cppTargets.cmake
+        NAMESPACE tempoch::
+        DESTINATION lib/cmake/tempoch_cpp
+        COMPONENT tempoch-cpp
+    )
+
     set(CPACK_PACKAGE_NAME             "tempoch-cpp")
     set(CPACK_PACKAGE_VERSION          "${PROJECT_VERSION}")
     set(CPACK_PACKAGE_VENDOR           "Siderust")
@@ -256,8 +264,6 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     set(CPACK_RESOURCE_FILE_LICENSE    "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
     set(CPACK_PACKAGE_HOMEPAGE_URL     "https://github.com/Siderust/tempoch-cpp")
 
-    # Keep version components aligned with the top-level project even when
-    # subprojects define their own versions.
     set(CPACK_PACKAGE_VERSION_MAJOR    "${PROJECT_VERSION_MAJOR}")
     set(CPACK_PACKAGE_VERSION_MINOR    "${PROJECT_VERSION_MINOR}")
     set(CPACK_PACKAGE_VERSION_PATCH    "${PROJECT_VERSION_PATCH}")
@@ -268,17 +274,18 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     set(CPACK_DEBIAN_PACKAGE_NAME        "tempoch-cpp")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER  "VPRamon <vallespuigramon@gmail.com>")
     set(CPACK_DEBIAN_PACKAGE_SECTION     "libs")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS     "libc6 (>= 2.17), libstdc++6 (>= 9), qtty-cpp")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS     "libc6 (>= 2.17), libstdc++6 (>= 9), qtty-cpp (>= 0.4.2)")
     set(CPACK_DEBIAN_FILE_NAME           DEB-DEFAULT)
 
     # -- RPM -----------------------------------------------------------------------
     set(CPACK_RPM_PACKAGE_NAME        "tempoch-cpp")
     set(CPACK_RPM_PACKAGE_LICENSE     "AGPL-3.0")
     set(CPACK_RPM_PACKAGE_GROUP       "Development/Libraries")
-    set(CPACK_RPM_PACKAGE_REQUIRES    "glibc >= 2.17, libstdc++ >= 9, qtty-cpp")
+    set(CPACK_RPM_PACKAGE_REQUIRES    "glibc >= 2.17, libstdc++ >= 9, qtty-cpp >= 0.4.2")
     set(CPACK_RPM_FILE_NAME           RPM-DEFAULT)
 
     set(CPACK_GENERATOR "DEB;RPM")
 
     include(CPack)
-endif()
+
+endif() # CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-05-11
+
+### Fixed
+
+- `CMakeLists.txt`: guarded all `install()` rules and `CMakePackageConfigHelpers`
+  calls inside `if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)` so
+  that tempoch-cpp artifacts are no longer included in parent packages
+  (siderust-cpp) when tempoch-cpp is used as a CMake subdirectory.  This
+  eliminates file-conflict errors such as
+  `trying to overwrite '/usr/include/tempoch/ffi_core.hpp'` when both packages
+  are installed simultaneously.
+
+### Changed
+
+- CPack DEB dependency on `qtty-cpp` now carries a minimum version constraint:
+  `qtty-cpp (>= 0.4.2)`.
+- CPack RPM dependency updated to `qtty-cpp >= 0.4.2`.
+
 ## [0.3.0] - 2026-05-09
 
 ### Added
