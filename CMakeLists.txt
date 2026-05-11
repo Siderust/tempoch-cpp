@@ -188,17 +188,20 @@ endif() # CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
 # Installation rules
 install(DIRECTORY include/tempoch
     DESTINATION include
+    COMPONENT tempoch-cpp
     FILES_MATCHING PATTERN "*.hpp"
 )
 
 install(DIRECTORY ${TEMPOCH_FFI_INCLUDE_DIR}/
     DESTINATION include
+    COMPONENT tempoch-cpp
     FILES_MATCHING PATTERN "*.h"
 )
 
 # Install the tempoch_ffi shared library
 install(FILES ${TEMPOCH_LIBRARY_PATH}
     DESTINATION lib
+    COMPONENT tempoch-cpp
 )
 
 # Install CMake config files for find_package support
@@ -220,6 +223,7 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/tempoch_cppConfig.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/tempoch_cppConfigVersion.cmake
     DESTINATION lib/cmake/tempoch_cpp
+    COMPONENT tempoch-cpp
 )
 
 install(TARGETS tempoch_cpp
@@ -231,6 +235,7 @@ install(EXPORT tempoch_cppTargets
     FILE tempoch_cppTargets.cmake
     NAMESPACE tempoch::
     DESTINATION lib/cmake/tempoch_cpp
+    COMPONENT tempoch-cpp
 )
 
 # ---------------------------------------------------------------------------
@@ -257,18 +262,20 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     set(CPACK_PACKAGE_VERSION_MINOR    "${PROJECT_VERSION_MINOR}")
     set(CPACK_PACKAGE_VERSION_PATCH    "${PROJECT_VERSION_PATCH}")
 
+    set(CPACK_COMPONENTS_ALL "tempoch-cpp")
+
     # -- DEB -----------------------------------------------------------------------
     set(CPACK_DEBIAN_PACKAGE_NAME        "tempoch-cpp")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER  "VPRamon <vallespuigramon@gmail.com>")
     set(CPACK_DEBIAN_PACKAGE_SECTION     "libs")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS     "libc6 (>= 2.17), libstdc++6 (>= 9)")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS     "libc6 (>= 2.17), libstdc++6 (>= 9), qtty-cpp")
     set(CPACK_DEBIAN_FILE_NAME           DEB-DEFAULT)
 
     # -- RPM -----------------------------------------------------------------------
     set(CPACK_RPM_PACKAGE_NAME        "tempoch-cpp")
     set(CPACK_RPM_PACKAGE_LICENSE     "AGPL-3.0")
     set(CPACK_RPM_PACKAGE_GROUP       "Development/Libraries")
-    set(CPACK_RPM_PACKAGE_REQUIRES    "glibc >= 2.17, libstdc++ >= 9")
+    set(CPACK_RPM_PACKAGE_REQUIRES    "glibc >= 2.17, libstdc++ >= 9, qtty-cpp")
     set(CPACK_RPM_FILE_NAME           RPM-DEFAULT)
 
     set(CPACK_GENERATOR "DEB;RPM")
