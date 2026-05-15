@@ -21,7 +21,8 @@ namespace tempoch {
  *
  * @code
  * tempoch::CivilTime noon(2000, 1, 1, 12, 0, 0);
- * auto jd = tempoch::JulianDate::from_utc(noon);
+ * auto utc = tempoch::Time<tempoch::scale::UTC>::from_civil(noon);
+ * auto jd = utc.to<tempoch::scale::TT>().to<tempoch::format::JD>();
  * @endcode
  */
 struct CivilTime {

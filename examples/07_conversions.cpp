@@ -22,32 +22,34 @@
 int main() {
   using namespace tempoch;
 
+  auto ctx = TimeContext::with_builtin_eop();
+
   // Start from a Unix timestamp (mirrors UnixTime::try_new(1_700_000_000.25)).
   UnixTime ux{1'700'000'000.25};
-  UTC utc = ux.to_utc();
+  auto utc = ux.to_time().to_civil();
 
   // Convert across continuous scales.
-  TAI tai = ux.to<scales::TAI>();
-  TT tt = tai.to<scales::TT>();
-  TDB tdb = tt.to<scales::TDB>();
-  UT ut1 = ux.to<scales::UT>();
+  auto tai = ux.to<scale::TAI>();
+  auto tt = tai.to<scale::TT>();
+  auto tdb = tt.to<scale::TDB>();
+  auto ut1 = ux.to_with<scale::UT1>(ctx);
 
   // GPS bridge.
-  GPS gps = tai.to<scales::GPS>();
-  TAI tai_from_gps = gps.to<scales::TAI>();
+  auto gps = tai.to<format::GPS>();
+  auto tai_from_gps = gps.to<scale::TAI>();
 
   std::cout << std::fixed << std::setprecision(9);
   std::cout << "UTC          : " << utc << "\n";
-  std::cout << "Unix seconds : " << std::fixed << std::setprecision(3) << ux << "\n";
+  std::cout << "Unix seconds : " << std::fixed << std::setprecision(3) << ux.value() << "\n";
   std::cout << std::fixed << std::setprecision(9);
-  std::cout << "TAI JD       : " << tai << "\n";
-  std::cout << "TT JD        : " << tt << "\n";
-  std::cout << "TDB JD       : " << tdb << "\n";
-  std::cout << "UT1 JD       : " << ut1 << "\n";
-  std::cout << "GPS days     : " << gps << "\n"; // days since GPS epoch
+  std::cout << "TAI JD       : " << tai.to<format::JD>() << "\n";
+  std::cout << "TT JD        : " << tt.to<format::JD>() << "\n";
+  std::cout << "TDB JD       : " << tdb.to<format::JD>() << "\n";
+  std::cout << "UT1 JD       : " << ut1.to<format::JD>() << "\n";
+  std::cout << "GPS seconds  : " << gps.value() << "\n";
 
   // GPS → TAI round-trip residual (mirrors the assert in 07_conversions.rs).
-  const double residual = std::abs(tai_from_gps.value() - tai.value()) * 86'400.0;
+  const double residual = std::abs((tai_from_gps - tai).value());
   std::cout << std::scientific;
   std::cout << "GPS→TAI residual: " << residual << " s\n";
   assert(residual < 1e-9);

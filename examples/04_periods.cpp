@@ -19,22 +19,25 @@
 int main() {
   using namespace tempoch;
 
-  auto mjd = [](double v) { return MJD{v}; };
+  using TTMjd = ModifiedJulianDate<scale::TT>;
+  using TTMjdPeriod = Period<TTMjd>;
 
-  MJDPeriod day{mjd(61'000.0), mjd(61'001.0)};
+  auto mjd = [](double v) { return TTMjd{v}; };
 
-  std::vector<MJDPeriod> a{
+  TTMjdPeriod day{mjd(61'000.0), mjd(61'001.0)};
+
+  std::vector<TTMjdPeriod> a{
       {mjd(61'000.10), mjd(61'000.30)},
       {mjd(61'000.60), mjd(61'000.85)},
   };
-  std::vector<MJDPeriod> b{
+  std::vector<TTMjdPeriod> b{
       {mjd(61'000.00), mjd(61'000.20)},
       {mjd(61'000.70), mjd(61'001.00)},
   };
 
   auto overlaps = intersect_periods(a, b);
   auto gaps = day.complement_of(a);
-  auto merged = normalize_periods<MJD>({a[0], a[1], overlaps[0]});
+  auto merged = normalize_periods<TTMjd>({a[0], a[1], overlaps[0]});
 
   validate_periods(a); // no-throw = valid
 
@@ -43,7 +46,7 @@ int main() {
   std::cout << "merged   : " << merged.size() << "\n";
   std::cout << "contains 61000.5? " << std::boolalpha << a[1].contains(mjd(61'000.5)) << "\n";
 
-  auto joined = day.union_with(MJDPeriod{mjd(60'999.0), mjd(61'001.5)});
+  auto joined = day.union_with(TTMjdPeriod{mjd(60'999.0), mjd(61'001.5)});
   std::cout << "union    : " << joined.size() << " period(s)\n";
 
   return 0;

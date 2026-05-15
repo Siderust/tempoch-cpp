@@ -2,243 +2,385 @@
 
 /**
  * @file time_base.hpp
- * @brief Core `Time<S>` class template and `CivilTime` struct.
- *
- * Mirrors the Rust `tempoch_core::instant::Time<S: TimeScale>` design:
- *   - A single `double` in the scale's native scalar representation
- *     (days for astronomical scales, seconds for Unix time) with compile-time
- *     dispatch via `TimeScaleTraits<S>`.
- *   - Cross-scale `.to<T>()` via `TimeConvertTraits<S,T>`.
- *   - `CivilTime` replaces the old `UTC` aggregate struct.
- *   - JD-specific extras (`J2000()`, `julian_centuries()`) are enabled only
- *     for `Time<JDScale>` via SFINAE.
+ * @brief Core `Time<S>`, `EncodedTime<S, F>`, and `TimeContext` types.
  */
 
 #include "civil_time.hpp"
-#include "qtty/qtty.hpp"
+#include "ffi_core.hpp"
 #include "scales.hpp"
-#include <iomanip>
+#include <cmath>
+#include <memory>
+#include <optional>
 #include <ostream>
 #include <type_traits>
+#include <utility>
 
 namespace tempoch {
 
+template <typename S> class Time;
+template <typename S, typename F> class EncodedTime;
+template <typename T> struct TimeTraits;
+
+namespace detail {
+
+struct ContextDeleter {
+  void operator()(tempoch_context_t *ptr) const noexcept { tempoch_context_free(ptr); }
+};
+
+inline std::shared_ptr<tempoch_context_t> make_default_context() {
+  tempoch_context_t *raw = nullptr;
+  check_status(tempoch_context_create_default(&raw), "tempoch_context_create_default");
+  return std::shared_ptr<tempoch_context_t>(raw, ContextDeleter{});
+}
+
+inline std::shared_ptr<tempoch_context_t> make_builtin_eop_context() {
+  tempoch_context_t *raw = nullptr;
+  check_status(tempoch_context_create_with_builtin_eop(&raw),
+               "tempoch_context_create_with_builtin_eop");
+  return std::shared_ptr<tempoch_context_t>(raw, ContextDeleter{});
+}
+
+inline std::shared_ptr<tempoch_context_t>
+make_pre_definition_context(const tempoch_context_t *parent) {
+  tempoch_context_t *raw = nullptr;
+  check_status(tempoch_context_allow_pre_definition_utc(parent, &raw),
+               "tempoch_context_allow_pre_definition_utc");
+  return std::shared_ptr<tempoch_context_t>(raw, ContextDeleter{});
+}
+
+inline tempoch_time_t make_time(double hi_seconds, double lo_seconds) {
+  tempoch_time_t out{};
+  check_status(tempoch_time_new(hi_seconds, lo_seconds, &out), "tempoch_time_new");
+  return out;
+}
+
+template <typename From, typename To>
+inline tempoch_time_t scale_convert(const tempoch_time_t &value, const tempoch_context_t *ctx) {
+  tempoch_time_t out{};
+  check_status(tempoch_time_scale_convert(value, static_cast<int32_t>(scale_tag_v<From>),
+                                          static_cast<int32_t>(scale_tag_v<To>), ctx, &out),
+               "tempoch_time_scale_convert");
+  return out;
+}
+
+template <typename S, typename F>
+inline double encode_time(const tempoch_time_t &value, const tempoch_context_t *ctx) {
+  double out = 0.0;
+  check_status(tempoch_time_to_format(value, static_cast<int32_t>(scale_tag_v<S>),
+                                      static_cast<int32_t>(format_tag_v<F>), ctx, &out),
+               "tempoch_time_to_format");
+  return out;
+}
+
+template <typename S, typename F>
+inline tempoch_time_t decode_time(double raw, const tempoch_context_t *ctx) {
+  tempoch_time_t out{};
+  check_status(tempoch_time_from_format(raw, static_cast<int32_t>(scale_tag_v<S>),
+                                        static_cast<int32_t>(format_tag_v<F>), ctx, &out),
+               "tempoch_time_from_format");
+  return out;
+}
+
+inline tempoch_time_t time_from_civil(const CivilTime &civil, const tempoch_context_t *ctx) {
+  tempoch_time_t out{};
+  check_status(tempoch_time_from_civil(civil.to_c(), ctx, &out), "tempoch_time_from_civil");
+  return out;
+}
+
+inline CivilTime time_to_civil(const tempoch_time_t &value, const tempoch_context_t *ctx) {
+  tempoch_utc_t out{};
+  check_status(tempoch_time_to_civil(value, ctx, &out), "tempoch_time_to_civil");
+  return CivilTime::from_c(out);
+}
+
+template <typename Q> inline tempoch_time_t add_seconds(const tempoch_time_t &value, const Q &qty) {
+  tempoch_time_t out{};
+  qtty_quantity_t raw{qty.value(), qtty::UnitTraits<typename Q::unit_tag>::unit_id()};
+  check_status(tempoch_time_add_seconds(value, raw, &out), "tempoch_time_add_seconds");
+  return out;
+}
+
+inline qtty::Second difference_seconds(const tempoch_time_t &lhs, const tempoch_time_t &rhs) {
+  double out = 0.0;
+  check_status(tempoch_time_difference_seconds(lhs, rhs, &out),
+               "tempoch_time_difference_seconds");
+  return qtty::Second(out);
+}
+
+template <typename F>
+inline typename FormatTraits<F>::quantity_type quantity_from_raw(double raw) {
+  return typename FormatTraits<F>::quantity_type(raw);
+}
+
+template <typename F> inline void ensure_finite_encoded(double raw, const char *operation) {
+  if (!std::isfinite(raw))
+    throw ConversionFailedError(std::string(operation) + " failed: non-finite raw value");
+}
+
+} // namespace detail
+
 /**
- * @brief A point in time on scale @p S, stored as a raw native scalar.
- *
- * Mirrors `tempoch_core::instant::Time<S: TimeScale>`.  Most operations are
- * dispatched through `TimeScaleTraits<S>`, keeping this class small and
- * reusable across all scales.
- *
- * @tparam S A scale tag for which `TimeScaleTraits<S>` is specialised.
- *
- * @code
- * using JulianDate = tempoch::Time<tempoch::scales::JD>;
- * auto jd = JulianDate::from_utc({2026, 7, 15, 22, 0, 0});
- * auto mjd = jd.to<tempoch::scales::MJD>();
- * @endcode
+ * @brief Immutable conversion context for UT1 and historical UTC routes.
+ */
+class TimeContext {
+  std::shared_ptr<tempoch_context_t> handle_;
+
+  explicit TimeContext(std::shared_ptr<tempoch_context_t> handle) : handle_(std::move(handle)) {}
+
+public:
+  TimeContext() : handle_(detail::make_default_context()) {}
+
+  static TimeContext with_builtin_eop() { return TimeContext(detail::make_builtin_eop_context()); }
+
+  TimeContext allow_pre_definition_utc() const {
+    return TimeContext(detail::make_pre_definition_context(handle_.get()));
+  }
+
+  const tempoch_context_t *get() const noexcept { return handle_.get(); }
+};
+
+/**
+ * @brief A point in time on scale @p S, stored as a split J2000-second pair.
  */
 template <typename S> class Time {
-  double m_days;
+  static_assert(is_scale_v<S>, "Time<S> requires a valid tempoch::scale tag");
+
+  tempoch_time_t raw_;
+
+  explicit Time(const tempoch_time_t &raw) : raw_(raw) {}
+
+  template <typename> friend class Time;
+  template <typename, typename> friend class EncodedTime;
 
 public:
   using scale_type = S;
 
-  // ── Constructors ──────────────────────────────────────────────────────
+  Time() : raw_(detail::make_time(0.0, 0.0)) {}
 
-  /// Construct from a raw value in this scale's native representation.
-  constexpr explicit Time(double value) : m_days(value) {}
-
-  /// Default-construct to zero in the scale's native representation.
-  constexpr Time() : m_days(0.0) {}
-
-  // Rule of Five (trivial — all defaulted)
-  Time(const Time &) = default;
-  Time(Time &&) noexcept = default;
-  Time &operator=(const Time &) = default;
-  Time &operator=(Time &&) noexcept = default;
-  ~Time() = default;
-
-  // ── Factory: from civil time ──────────────────────────────────────────
-
-  /**
-   * @brief Create from a UTC civil-time breakdown.
-   *
-   * Accepts brace-initialised `CivilTime`, e.g.:
-   * @code
-   * auto jd = JulianDate::from_utc({2026, 7, 15, 22, 0, 0});
-   * @endcode
-   */
-  static Time from_utc(const CivilTime &ct) { return Time(TimeScaleTraits<S>::from_civil(ct)); }
-
-  // ── Accessors ─────────────────────────────────────────────────────────
-
-  /// Raw value in this scale's native representation.
-  constexpr double value() const noexcept { return m_days; }
-
-  /// Human-readable label for the scale (e.g. "JD", "MJD", "UTC").
-  static constexpr const char *label() { return TimeScaleTraits<S>::label(); }
-
-  // ── Civil-time conversion ─────────────────────────────────────────────
-
-  /// Convert to a UTC civil-time breakdown.
-  CivilTime to_utc() const { return TimeScaleTraits<S>::to_civil(m_days); }
-
-  // ── Cross-scale conversion ────────────────────────────────────────────
-
-  /**
-   * @brief Convert to another time scale.
-   * @tparam T Target scale tag (e.g. `MJDScale`).
-   */
-  template <typename T> Time<T> to() const {
-    return Time<T>(TimeConvertTraits<S, T>::convert(m_days));
+  static Time from_split_seconds(qtty::Second hi, qtty::Second lo = qtty::Second(0.0)) {
+    return Time(detail::make_time(hi.value(), lo.value()));
   }
 
-  // ── Arithmetic ────────────────────────────────────────────────────────
+  static Time from_raw_j2000_seconds(qtty::Second seconds) { return from_split_seconds(seconds); }
 
-  /**
-   * @brief Advance by a typed time quantity.
-   *
-   * Accepts any qtty time unit; the value is converted to days internally.
-   * @code
-   * auto t2 = jd  + qtty::Day(365.25);
-   * auto t3 = mjd + qtty::Hour(12.0);
-   * auto t4 = mjd + 30.0_min;            // using qtty::literals
-   * @endcode
-   */
-  template <typename Q> Time operator+(const qtty::Quantity<Q> &delta) const {
-    qtty_quantity_t qty{delta.value(), qtty::UnitTraits<Q>::unit_id()};
-    double result;
-    TimeScaleTraits<S>::add_qty(m_days, qty, result);
-    return Time(result);
+  std::pair<qtty::Second, qtty::Second> split_seconds() const noexcept {
+    return {qtty::Second(raw_.hi_seconds), qtty::Second(raw_.lo_seconds)};
   }
 
-  /**
-   * @brief Retreat by a typed time quantity.
-   */
-  template <typename Q> Time operator-(const qtty::Quantity<Q> &delta) const {
-    qtty_quantity_t neg_qty{-delta.value(), qtty::UnitTraits<Q>::unit_id()};
-    double result;
-    TimeScaleTraits<S>::add_qty(m_days, neg_qty, result);
-    return Time(result);
+  qtty::Second total_seconds() const noexcept { return qtty::Second(raw_.hi_seconds + raw_.lo_seconds); }
+
+  const tempoch_time_t &c_inner() const noexcept { return raw_; }
+
+  static constexpr const char *label() { return ScaleTraits<S>::name(); }
+
+  template <typename U = S, std::enable_if_t<std::is_same_v<U, scale::UTC>, int> = 0>
+  static Time from_civil(const CivilTime &civil) {
+    return Time(detail::time_from_civil(civil, nullptr));
   }
 
-  /**
-   * @brief Elapsed duration between two instants, returned as `qtty::Day`.
-   *
-   * Convert to other units with `.to<qtty::Hour>()` etc.
-   * @code
-   * qtty::Day  d = t2 - t1;
-   * qtty::Hour h = (t2 - t1).to<qtty::Hour>();
-   * @endcode
-   */
-  qtty::Day operator-(const Time &other) const {
-    auto qty = TimeScaleTraits<S>::difference_qty(m_days, other.m_days);
-    return qtty::Day(qty.value);
+  template <typename U = S, std::enable_if_t<std::is_same_v<U, scale::UTC>, int> = 0>
+  static Time from_civil(const CivilTime &civil, const TimeContext &ctx) {
+    return Time(detail::time_from_civil(civil, ctx.get()));
   }
 
-  // ── Comparisons ───────────────────────────────────────────────────────
-
-  bool operator==(const Time &o) const noexcept { return m_days == o.m_days; }
-  bool operator!=(const Time &o) const noexcept { return m_days != o.m_days; }
-  bool operator<(const Time &o) const noexcept { return m_days < o.m_days; }
-  bool operator<=(const Time &o) const noexcept { return m_days <= o.m_days; }
-  bool operator>(const Time &o) const noexcept { return m_days > o.m_days; }
-  bool operator>=(const Time &o) const noexcept { return m_days >= o.m_days; }
-
-  // ── JD-only extras (SFINAE-guarded) ───────────────────────────────────
-
-  /// J2000.0 epoch (JD 2 451 545.0).  Only available for `Time<scales::JD>`.
-  template <typename U = S> static std::enable_if_t<std::is_same_v<U, scales::JD>, Time> J2000() {
-    return Time(TimeScaleTraits<scales::JD>::j2000());
+  template <typename U = S, std::enable_if_t<std::is_same_v<U, scale::UTC>, int> = 0>
+  CivilTime to_civil() const {
+    return detail::time_to_civil(raw_, nullptr);
   }
 
-  /// Julian centuries since J2000.  Only available for `Time<scales::JD>`.
-  template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, scales::JD>, double> julian_centuries() const {
-    return TimeScaleTraits<scales::JD>::julian_centuries(m_days);
+  template <typename U = S, std::enable_if_t<std::is_same_v<U, scale::UTC>, int> = 0>
+  CivilTime to_civil(const TimeContext &ctx) const {
+    return detail::time_to_civil(raw_, ctx.get());
   }
 
-  /// Julian centuries since J2000 as a typed quantity.
-  /// Only for `Time<scales::JD>`.
-  template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, scales::JD>, qtty::JulianCentury>
-  julian_centuries_qty() const {
-    auto qty = TimeScaleTraits<scales::JD>::julian_centuries_qty(m_days);
-    return qtty::JulianCentury(qty.value);
+  template <typename TargetScale,
+            std::enable_if_t<is_scale_v<TargetScale> && !std::is_same_v<S, scale::UT1> &&
+                                 !std::is_same_v<TargetScale, scale::UT1>,
+                             int> = 0>
+  Time<TargetScale> to() const {
+    return Time<TargetScale>(detail::scale_convert<S, TargetScale>(raw_, nullptr));
   }
 
-  // ── JD ↔ MJD convenience (preserves old API surface) ──────────────────
+  template <typename TargetScale,
+            std::enable_if_t<is_scale_v<TargetScale> &&
+                                 (std::is_same_v<S, scale::UT1> ||
+                                  std::is_same_v<TargetScale, scale::UT1>),
+                             int> = 0>
+  Time<TargetScale> to() const = delete;
 
-  /// Convert to MJD double.  Only available for `Time<scales::JD>`.
-  template <typename U = S> std::enable_if_t<std::is_same_v<U, scales::JD>, double> to_mjd() const {
-    return TimeConvertTraits<scales::JD, scales::MJD>::convert(m_days);
+  template <typename TargetScale, std::enable_if_t<is_scale_v<TargetScale>, int> = 0>
+  Time<TargetScale> to_with(const TimeContext &ctx) const {
+    return Time<TargetScale>(detail::scale_convert<S, TargetScale>(raw_, ctx.get()));
   }
 
-  /// Create from a JulianDate.  Only available for `Time<scales::MJD>`.
-  template <typename U = S>
-  static std::enable_if_t<std::is_same_v<U, scales::MJD>, Time>
-  from_jd(const Time<scales::JD> &jd) {
-    return Time(TimeConvertTraits<scales::JD, scales::MJD>::convert(jd.value()));
+  template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
+  EncodedTime<S, TargetFormat> to() const {
+    return EncodedTime<S, TargetFormat>(
+        detail::quantity_from_raw<TargetFormat>(detail::encode_time<S, TargetFormat>(raw_, nullptr)));
   }
 
-  /// Convert to JulianDate.  Only available for `Time<scales::MJD>`.
-  template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, scales::MJD>, Time<scales::JD>> to_jd() const {
-    return Time<scales::JD>(TimeConvertTraits<scales::MJD, scales::JD>::convert(m_days));
+  template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
+  EncodedTime<S, TargetFormat> to_with(const TimeContext &ctx) const {
+    return EncodedTime<S, TargetFormat>(detail::quantity_from_raw<TargetFormat>(
+        detail::encode_time<S, TargetFormat>(raw_, ctx.get())));
   }
 
-  // ── UT-only extras (SFINAE-guarded) ───────────────────────────────────
-
-  /// ΔT = TT − UT1 in seconds.  Only available for `Time<scales::UT>`.
-  template <typename U = S>
-  std::enable_if_t<std::is_same_v<U, scales::UT>, qtty::Second> delta_t() const {
-    double jd = TimeConvertTraits<scales::UT, scales::JD>::convert(m_days);
-    double seconds = 0.0;
-    check_status(tempoch_delta_t_seconds_checked(jd, &seconds), "tempoch_delta_t_seconds_checked");
-    return qtty::Second(seconds);
+  template <typename TargetScale, std::enable_if_t<is_scale_v<TargetScale>, int> = 0>
+  std::optional<Time<TargetScale>> try_to() const {
+    try {
+      return to_with<TargetScale>(TimeContext());
+    } catch (const std::exception &) {
+      return std::nullopt;
+    }
   }
+
+  template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
+  std::optional<EncodedTime<S, TargetFormat>> try_to() const {
+    try {
+      return to_with<TargetFormat>(TimeContext());
+    } catch (const std::exception &) {
+      return std::nullopt;
+    }
+  }
+
+  template <typename Q> Time operator+(const Q &delta) const {
+    return Time(detail::add_seconds(raw_, delta));
+  }
+
+  template <typename Q> Time operator-(const Q &delta) const { return *this + Q(-delta.value()); }
+
+  qtty::Second operator-(const Time &other) const {
+    return detail::difference_seconds(raw_, other.raw_);
+  }
+
+  bool operator==(const Time &other) const noexcept {
+    return raw_.hi_seconds == other.raw_.hi_seconds && raw_.lo_seconds == other.raw_.lo_seconds;
+  }
+
+  bool operator!=(const Time &other) const noexcept { return !(*this == other); }
+
+  bool operator<(const Time &other) const noexcept {
+    return raw_.hi_seconds < other.raw_.hi_seconds ||
+           (raw_.hi_seconds == other.raw_.hi_seconds && raw_.lo_seconds < other.raw_.lo_seconds);
+  }
+
+  bool operator<=(const Time &other) const noexcept { return !(other < *this); }
+  bool operator>(const Time &other) const noexcept { return other < *this; }
+  bool operator>=(const Time &other) const noexcept { return !(*this < other); }
 };
 
-// ============================================================================
-// operator<<  —  streams "<label>:<value>"
-// ============================================================================
-
-template <typename S> inline std::ostream &operator<<(std::ostream &os, const Time<S> &t) {
-  return os << t.value();
+template <typename S> inline std::ostream &operator<<(std::ostream &os, const Time<S> &time) {
+  return os << Time<S>::label() << " " << time.total_seconds().value() << " s";
 }
 
-// ============================================================================
-// TimeTraits<Time<S>>  —  connects Time<S> to Period<T>
-// ============================================================================
+/**
+ * @brief A typed external encoding of a time instant on scale @p S.
+ */
+template <typename S, typename F> class EncodedTime {
+  static_assert(is_scale_v<S>, "EncodedTime<S, F> requires a valid tempoch::scale tag");
+  static_assert(is_format_v<F>, "EncodedTime<S, F> requires a valid tempoch::format tag");
 
-// Forward declaration — full Period template lives in period.hpp.
-template <typename T> struct TimeTraits;
+public:
+  using scale_type = S;
+  using format_type = F;
+  using quantity_type = typename FormatTraits<F>::quantity_type;
 
-/// Generic TimeTraits for any Time<S>.  Converts via MJD internally.
-template <typename S> struct TimeTraits<Time<S>> {
-  static double to_mjd_value(const Time<S> &t) {
-    if constexpr (std::is_same_v<S, scales::MJD> || std::is_same_v<S, scales::UTC>) {
-      return t.value();
-    } else {
-      return t.template to<scales::MJD>().value();
+private:
+  quantity_type raw_;
+
+public:
+  EncodedTime() : raw_(0.0) {}
+
+  explicit EncodedTime(quantity_type raw) : raw_(raw) {
+    detail::ensure_finite_encoded<F>(raw_.value(), "EncodedTime::EncodedTime");
+  }
+
+  explicit EncodedTime(double value) : EncodedTime(quantity_type(value)) {}
+
+  static std::optional<EncodedTime> try_new(quantity_type raw) {
+    if (!std::isfinite(raw.value()))
+      return std::nullopt;
+    return EncodedTime(raw);
+  }
+
+  static EncodedTime from_raw_unchecked(quantity_type raw) { return EncodedTime(raw); }
+
+  quantity_type raw() const noexcept { return raw_; }
+  quantity_type quantity() const noexcept { return raw_; }
+  double value() const noexcept { return raw_.value(); }
+
+  template <typename U = F, std::enable_if_t<std::is_same_v<U, format::JD>, int> = 0>
+  static EncodedTime J2000() {
+    return EncodedTime(tempoch_const_j2000_jd_tt());
+  }
+
+  Time<S> to_time() const { return Time<S>(detail::decode_time<S, F>(raw_.value(), nullptr)); }
+
+  Time<S> to_time_with(const TimeContext &ctx) const {
+    return Time<S>(detail::decode_time<S, F>(raw_.value(), ctx.get()));
+  }
+
+  template <typename TargetScale, std::enable_if_t<is_scale_v<TargetScale>, int> = 0>
+  auto to() const -> decltype(this->to_time().template to<TargetScale>()) {
+    return to_time().template to<TargetScale>();
+  }
+
+  template <typename TargetScale, std::enable_if_t<is_scale_v<TargetScale>, int> = 0>
+  Time<TargetScale> to_with(const TimeContext &ctx) const {
+    return to_time_with(ctx).template to_with<TargetScale>(ctx);
+  }
+
+  template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
+  EncodedTime<S, TargetFormat> to() const {
+    return to_time().template to<TargetFormat>();
+  }
+
+  template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
+  EncodedTime<S, TargetFormat> to_with(const TimeContext &ctx) const {
+    return to_time_with(ctx).template to_with<TargetFormat>(ctx);
+  }
+
+  template <typename TargetScale, std::enable_if_t<is_scale_v<TargetScale>, int> = 0>
+  std::optional<Time<TargetScale>> try_to() const {
+    try {
+      return to_with<TargetScale>(TimeContext());
+    } catch (const std::exception &) {
+      return std::nullopt;
     }
   }
 
-  static Time<S> from_mjd_value(double mjd) {
-    if constexpr (std::is_same_v<S, scales::MJD> || std::is_same_v<S, scales::UTC>) {
-      return Time<S>(mjd);
-    } else {
-      return Time<scales::MJD>(mjd).template to<S>();
+  template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
+  std::optional<EncodedTime<S, TargetFormat>> try_to() const {
+    try {
+      return to_with<TargetFormat>(TimeContext());
+    } catch (const std::exception &) {
+      return std::nullopt;
     }
   }
+
+  template <typename Q> EncodedTime operator+(const Q &delta) const {
+    return (to_time() + delta).template to<F>();
+  }
+
+  template <typename Q> EncodedTime operator-(const Q &delta) const {
+    return (to_time() - delta).template to<F>();
+  }
+
+  quantity_type operator-(const EncodedTime &other) const {
+    return (to_time() - other.to_time()).template to<quantity_type>();
+  }
+
+  bool operator==(const EncodedTime &other) const noexcept { return raw_ == other.raw_; }
+  bool operator!=(const EncodedTime &other) const noexcept { return raw_ != other.raw_; }
+  bool operator<(const EncodedTime &other) const noexcept { return raw_ < other.raw_; }
+  bool operator<=(const EncodedTime &other) const noexcept { return raw_ <= other.raw_; }
+  bool operator>(const EncodedTime &other) const noexcept { return raw_ > other.raw_; }
+  bool operator>=(const EncodedTime &other) const noexcept { return raw_ >= other.raw_; }
 };
 
-// ============================================================================
-// Backward-compatible alias
-// ============================================================================
-
-/// Old name kept for source compatibility.
-using UTC = CivilTime;
+template <typename S, typename F>
+inline std::ostream &operator<<(std::ostream &os, const EncodedTime<S, F> &time) {
+  return os << time.value();
+}
 
 } // namespace tempoch

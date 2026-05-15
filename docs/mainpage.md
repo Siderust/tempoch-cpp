@@ -3,9 +3,8 @@
 `tempoch-cpp` is a **modern, header-only C++17 library** for astronomical
 time primitives. It wraps the Rust-based
 [`tempoch`](https://github.com/siderust/tempoch) through its C FFI layer
-(`tempoch-ffi`), exposing `UTC`, `JulianDate`, `MJD`, and `Period` as
-idiomatic C++ value types with arithmetic, comparisons, and exception-based
-error reporting — no manual FFI plumbing required.
+(`tempoch-ffi`), exposing the same two-axis model as Rust: physical
+**scale** and external **format** are separate type parameters.
 
 ---
 
@@ -13,10 +12,11 @@ error reporting — no manual FFI plumbing required.
 
 | Feature | Description |
 |---------|-------------|
-| **`UTC`** | Civil date-time struct (year/month/day/hour/min/sec) with nanosecond precision |
-| **`JulianDate`** | Strongly-typed Julian Date with arithmetic and UTC conversion |
-| **`MJD`** | Strongly-typed Modified Julian Date; interchangeable with `JulianDate` |
-| **`Period`** | Inclusive `[start, end]` MJD interval with intersection, duration, and iteration helpers |
+| **`CivilTime`** | Civil UTC date-time struct (year/month/day/hour/min/sec) with nanosecond precision |
+| **`Time<scale::S>`** | Canonical instant on a physical timescale, stored as split J2000 seconds |
+| **`EncodedTime<S, F>`** | Typed external encoding such as `JulianDate<scale::TT>` or `ModifiedJulianDate<scale::UTC>` |
+| **`TimeContext`** | Explicit context for UT1 and historical UTC routes |
+| **`Period<T>`** | Inclusive `[start, end]` interval over any supported time representation |
 | **Exception hierarchy** | All FFI status codes map to typed C++ exceptions |
 | **Header-only** | Drop into any project — no separate compilation step |
 
@@ -26,37 +26,23 @@ error reporting — no manual FFI plumbing required.
 
 ```cpp
 #include <tempoch/tempoch.hpp>
-#include <cstdio>
+#include <iostream>
 
 int main() {
     using namespace tempoch;
 
-    // Construct a UTC civil time
-    UTC utc{2026, 7, 15, 22, 0, 0};
+    CivilTime civil{2026, 7, 15, 22, 0, 0};
+    auto utc = Time<scale::UTC>::from_civil(civil);
+    auto tt = utc.to<scale::TT>();
 
-    // Convert to Julian Date and MJD
-    JulianDate jd  = JulianDate::from_utc(utc);
-    MJD        mjd = MJD::from_jd(jd);
+    auto jd_tt = tt.to<format::JD>();
+    auto jd_utc = utc.to<format::JD>();
+    auto mjd_tt = tt.to<format::MJD>();
 
-    std::printf("JD  = %.6f\n", jd.value());
-    std::printf("MJD = %.6f\n", mjd.value());
-
-    // Create a one-day window and check containment
-    MJD start = mjd;
-    MJD end   = mjd + 1.0;
-    Period night{start, end};
-
-    std::printf("Duration: %.2f days\n", night.duration());
-    std::printf("Contains midpoint: %s\n",
-                night.contains(mjd + 0.5) ? "yes" : "no");
-
-    // Round-trip back to UTC
-    UTC back = jd.to_utc();
-    std::printf("UTC: %04d-%02d-%02d %02d:%02d:%02d\n",
-                back.year, back.month, back.day,
-                back.hour, back.minute, back.second);
-
-    return 0;
+    std::cout << "Civil UTC : " << civil << "\n";
+    std::cout << "JD(TT)    : " << jd_tt << "\n";
+    std::cout << "JD(UTC)   : " << jd_utc << "\n";
+    std::cout << "MJD(TT)   : " << mjd_tt << "\n";
 }
 ```
 
@@ -71,7 +57,7 @@ int main() {
 └──────┬───────┘
        │  header-only (inline)
 ┌──────▼───────┐
-│ tempoch-cpp  │   C++17 value types: UTC, JulianDate, MJD, Period
+│ tempoch-cpp  │   C++17 value types: CivilTime, Time<S>, EncodedTime<S,F>, Period<T>
 │  (headers)   │
 └──────┬───────┘
        │  extern "C" calls
@@ -90,9 +76,17 @@ int main() {
 ## Modules
 
 - `tempoch/tempoch.hpp` — umbrella include for the full public API
-- `tempoch/time.hpp` — `UTC`, `JulianDate`, `MJD` types
+- `tempoch/time.hpp` — `CivilTime`, `Time<scale::S>`, `JulianDate<scale::S>`, `ModifiedJulianDate<scale::S>`
 - `tempoch/period.hpp` — `Period` interval type
 - `tempoch/ffi_core.hpp` — FFI helpers and exception hierarchy
+
+## Migration Notes
+
+- Old `JulianDate` means `JulianDate<scale::TT>`.
+- Old `MJD` means `ModifiedJulianDate<scale::TT>`.
+- Old `TT` means `Time<scale::TT>`.
+- Old `UTC` civil construction is now `CivilTime` plus `Time<scale::UTC>::from_civil(...)`.
+- Legacy names are available only through opt-in compatibility headers.
 
 ---
 
@@ -128,7 +122,7 @@ cmake -S . -B build
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 
-./build/time_example
+./build/01_quickstart
 ```
 
 ---
