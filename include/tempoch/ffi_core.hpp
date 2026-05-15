@@ -78,6 +78,22 @@ public:
 };
 
 /**
+ * @brief A generic scale/format conversion failed.
+ */
+class ConversionFailedError : public TempochException {
+public:
+  explicit ConversionFailedError(const std::string &msg) : TempochException(msg) {}
+};
+
+/**
+ * @brief The supplied raw format identifier is invalid.
+ */
+class InvalidFormatIdError : public TempochException {
+public:
+  explicit InvalidFormatIdError(const std::string &msg) : TempochException(msg) {}
+};
+
+/**
  * @brief Rust caught a panic before unwinding across the FFI boundary.
  */
 class InternalPanicError : public TempochException {
@@ -138,6 +154,10 @@ inline void check_status(tempoch_status_t status, const char *operation) {
     throw InvalidScaleIdError(msg + "invalid scale id");
   case TEMPOCH_STATUS_T_INVALID_DURATION_UNIT:
     throw InvalidDurationUnitError(msg + "invalid duration unit");
+  case TEMPOCH_STATUS_T_CONVERSION_FAILED:
+    throw ConversionFailedError(msg + "conversion failed");
+  case TEMPOCH_STATUS_T_INVALID_FORMAT_ID:
+    throw InvalidFormatIdError(msg + "invalid format id");
   case TEMPOCH_STATUS_T_INTERNAL_PANIC:
     throw InternalPanicError(msg + "internal panic");
   case TEMPOCH_STATUS_T_UT1_HORIZON_EXCEEDED:

@@ -4,7 +4,8 @@
 /**
  * @file 01_quickstart.cpp
  * @example 01_quickstart.cpp
- * @brief Quick start: a fixed UTC instant expressed as TT, JD, and MJD.
+ * @brief Quick start: civil UTC promoted to canonical time, then encoded as
+ * JD(TT), JD(UTC), and MJD(TT).
  *
  * Mirrors tempoch example 01_quickstart.rs.  chrono system-time integration
  * is not available through the C FFI, so a fixed reference date is used.
@@ -21,16 +22,20 @@
 int main() {
   using namespace tempoch;
 
-  UTC utc_now{2026, 7, 15, 22, 0, 0};
-  JulianDate jd = JulianDate::from_utc(utc_now);
-  TT tt = jd.to<scales::TT>();
-  MJD mjd = jd.to<scales::MJD>();
+  CivilTime civil{2026, 7, 15, 22, 0, 0};
+  auto utc = Time<scale::UTC>::from_civil(civil);
+  auto tt = utc.to<scale::TT>();
+  auto jd_tt = tt.to<format::JD>();
+  auto jd_utc = utc.to<format::JD>();
+  auto mjd_tt = tt.to<format::MJD>();
 
   std::cout << std::fixed << std::setprecision(9);
-  std::cout << "UTC       : " << utc_now << "\n";
-  std::cout << "TT JD     : " << tt << "\n";
-  std::cout << "JD        : " << jd << "\n";
-  std::cout << "MJD       : " << mjd << "\n";
+  std::cout << "Civil UTC : " << civil << "\n";
+  std::cout << "UTC axis  : " << utc << "\n";
+  std::cout << "TT axis   : " << tt << "\n";
+  std::cout << "JD(TT)    : " << jd_tt << "\n";
+  std::cout << "JD(UTC)   : " << jd_utc << "\n";
+  std::cout << "MJD(TT)   : " << mjd_tt << "\n";
 
   return 0;
 }

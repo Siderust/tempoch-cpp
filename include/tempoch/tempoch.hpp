@@ -6,12 +6,12 @@
  *
  * Include this single header to get the full tempoch C++ API:
  *
- *   - `tempoch::Time<S>`       — generic time-point template (core)
- *   - `tempoch::JulianDate`    = `Time<JDScale>`
- *   - `tempoch::MJD`           = `Time<MJDScale>`
- *   - `tempoch::CivilTime`     — UTC civil date-time breakdown
- *   - `tempoch::UTC`           — alias for `CivilTime`
- *   - `tempoch::Period<T>`     — time period [start, end] with list operations
+ *   - `tempoch::Time<S>`         — split-storage instant on scale `S`
+ *   - `tempoch::JulianDate<S>`   — JD encoding on scale `S`
+ *   - `tempoch::ModifiedJulianDate<S>`
+ *   - `tempoch::CivilTime`       — civil UTC calendar label
+ *   - `tempoch::TimeContext`     — explicit UT1 / historical UTC context
+ *   - `tempoch::Period<T>`       — time period [start, end] with list operations
  *   - `tempoch::EopValues`     — IERS Earth Orientation Parameter values
  *   - `tempoch::eop_at()`      — interpolate EOP at a UTC MJD
  *   - `tempoch::eop_covers()`  — check EOP data availability
@@ -20,8 +20,10 @@
  * @code
  * #include <tempoch/tempoch.hpp>
  *
- * auto jd  = tempoch::JulianDate::from_utc({2026, 7, 15, 22, 0, 0});
- * auto mjd = jd.to<tempoch::MJDScale>();   // cross-scale conversion
+ * auto utc = tempoch::Time<tempoch::scale::UTC>::from_civil({2026, 7, 15, 22, 0, 0});
+ * auto tt  = utc.to<tempoch::scale::TT>();
+ * auto jd  = tt.to<tempoch::format::JD>();
+ * auto mjd = tt.to<tempoch::format::MJD>();
  *
  * if (auto eop = tempoch::eop_at(mjd.value()))
  *     std::cout << "DUT1 = " << eop->ut1_minus_utc << " s\n";

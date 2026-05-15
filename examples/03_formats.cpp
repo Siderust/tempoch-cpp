@@ -24,32 +24,32 @@ static constexpr double UNIX_EPOCH_MJD = 40'587.0;   // 1970-01-01 MJD
 int main() {
   using namespace tempoch;
 
-  // J2000 epoch via direct JD construction.
-  TT j2000_tt{constants::j2000_jd_tt()};
+  // J2000 epoch as canonical TT, then viewed through encodings.
+  auto j2000_tt = JulianDate<scale::TT>::J2000().to_time();
 
   // Sample TT instant: J2000 + 123 456.789 s.
-  TT sample_tt{constants::j2000_jd_tt() + 123'456.789 / 86'400.0};
+  auto sample_tt = j2000_tt + qtty::Second(123'456.789);
 
   // J2000 from JulianDate constructor (mirrors JulianDate::<TT>::try_new(J2000_JD_TT)).
-  JulianDate j2000_from_jd{constants::j2000_jd_tt()};
+  JulianDate<scale::TT> j2000_from_jd{constants::j2000_jd_tt()};
 
   // Unix epoch from JD value.
-  JulianDate unix_epoch_jd{UNIX_EPOCH_JD};
+  JulianDate<scale::TT> unix_epoch_jd{UNIX_EPOCH_JD};
 
   // Half-day after J2000 via JD.
-  JulianDate half_day_jd{constants::j2000_jd_tt() + 0.5};
+  JulianDate<scale::TT> half_day_jd{constants::j2000_jd_tt() + 0.5};
 
   // Unix epoch from MJD value.
-  MJD unix_epoch_mjd{UNIX_EPOCH_MJD};
+  ModifiedJulianDate<scale::TT> unix_epoch_mjd{UNIX_EPOCH_MJD};
 
   // Unix time from seconds (mirrors UnixTime::try_new(Second::new(1_700_000_000.25))).
   UnixTime ux{1'700'000'000.25};
-  UTC utc_from_ux = ux.to_utc();
+  auto utc_from_ux = ux.to_time().to_civil();
 
   std::cout << std::fixed << std::setprecision(9);
-  std::cout << "J2000 TT JD       : " << j2000_tt << "\n";
-  std::cout << "Sample TT JD      : " << sample_tt << "\n";
-  std::cout << "Sample TT MJD     : " << sample_tt.to<scales::MJD>() << "\n";
+  std::cout << "J2000 TT JD       : " << j2000_tt.to<format::JD>() << "\n";
+  std::cout << "Sample TT JD      : " << sample_tt.to<format::JD>() << "\n";
+  std::cout << "Sample TT MJD     : " << sample_tt.to<format::MJD>() << "\n";
   std::cout << "J2000 from JD     : " << j2000_from_jd << "\n";
   std::cout << "Unix epoch JD(TT) : " << unix_epoch_jd << "\n";
   std::cout << "Half-day JD(TT)   : " << half_day_jd << "\n";
