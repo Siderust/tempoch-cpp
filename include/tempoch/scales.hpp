@@ -126,7 +126,6 @@ template <> struct FormatTraits<format::GPS> {
 };
 
 template <typename S> inline constexpr tempoch_scale_tag_t scale_tag_v = ScaleTraits<S>::ffi_tag;
-template <typename F>
-inline constexpr tempoch_format_tag_t format_tag_v = FormatTraits<F>::ffi_tag;
+template <typename F> inline constexpr tempoch_format_tag_t format_tag_v = FormatTraits<F>::ffi_tag;
 
 } // namespace tempoch

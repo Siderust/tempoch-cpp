@@ -17,9 +17,7 @@ template <typename S> struct TimeTraits<Time<S>> {
     return time.template to<format::MJD>().value();
   }
 
-  static Time<S> from_mjd_value(double mjd) {
-    return ModifiedJulianDate<S>(mjd).to_time();
-  }
+  static Time<S> from_mjd_value(double mjd) { return ModifiedJulianDate<S>(mjd).to_time(); }
 };
 
 template <typename S, typename F> struct TimeTraits<EncodedTime<S, F>> {
@@ -182,7 +180,8 @@ inline std::vector<Period<T>> union_periods(const std::vector<Period<T>> &a,
   return result;
 }
 
-template <typename T> inline std::vector<Period<T>> normalize_periods(const std::vector<Period<T>> &periods) {
+template <typename T>
+inline std::vector<Period<T>> normalize_periods(const std::vector<Period<T>> &periods) {
   std::vector<tempoch_period_mjd_t> raw;
   raw.reserve(periods.size());
   for (const auto &period : periods)

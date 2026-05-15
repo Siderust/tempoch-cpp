@@ -102,13 +102,11 @@ template <typename Q> inline tempoch_time_t add_seconds(const tempoch_time_t &va
 
 inline qtty::Second difference_seconds(const tempoch_time_t &lhs, const tempoch_time_t &rhs) {
   double out = 0.0;
-  check_status(tempoch_time_difference_seconds(lhs, rhs, &out),
-               "tempoch_time_difference_seconds");
+  check_status(tempoch_time_difference_seconds(lhs, rhs, &out), "tempoch_time_difference_seconds");
   return qtty::Second(out);
 }
 
-template <typename F>
-inline typename FormatTraits<F>::quantity_type quantity_from_raw(double raw) {
+template <typename F> inline typename FormatTraits<F>::quantity_type quantity_from_raw(double raw) {
   return typename FormatTraits<F>::quantity_type(raw);
 }
 
@@ -167,7 +165,9 @@ public:
     return {qtty::Second(raw_.hi_seconds), qtty::Second(raw_.lo_seconds)};
   }
 
-  qtty::Second total_seconds() const noexcept { return qtty::Second(raw_.hi_seconds + raw_.lo_seconds); }
+  qtty::Second total_seconds() const noexcept {
+    return qtty::Second(raw_.hi_seconds + raw_.lo_seconds);
+  }
 
   const tempoch_time_t &c_inner() const noexcept { return raw_; }
 
@@ -202,9 +202,8 @@ public:
   }
 
   template <typename TargetScale,
-            std::enable_if_t<is_scale_v<TargetScale> &&
-                                 (std::is_same_v<S, scale::UT1> ||
-                                  std::is_same_v<TargetScale, scale::UT1>),
+            std::enable_if_t<is_scale_v<TargetScale> && (std::is_same_v<S, scale::UT1> ||
+                                                         std::is_same_v<TargetScale, scale::UT1>),
                              int> = 0>
   Time<TargetScale> to() const = delete;
 
@@ -215,8 +214,8 @@ public:
 
   template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
   EncodedTime<S, TargetFormat> to() const {
-    return EncodedTime<S, TargetFormat>(
-        detail::quantity_from_raw<TargetFormat>(detail::encode_time<S, TargetFormat>(raw_, nullptr)));
+    return EncodedTime<S, TargetFormat>(detail::quantity_from_raw<TargetFormat>(
+        detail::encode_time<S, TargetFormat>(raw_, nullptr)));
   }
 
   template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
