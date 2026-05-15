@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-05-15
+
+### Added
+
+- `include/tempoch/legacy_time.hpp` with opt-in deprecated aliases for pre-redesign names such as `UTC`, `JulianDate`, `MJD`, `TT`, `TAI`, `TDB`, `TCG`, `TCB`, `UT`, `JDE`, and `GPS`.
+- New FFI exception mappings in `include/tempoch/ffi_core.hpp` for generic conversion failures and invalid format identifiers via `ConversionFailedError` and `InvalidFormatIdError`.
+
+### Changed
+
+- Refactored the public time model around explicit physical scales and external encodings: `Time<scale::S>` represents canonical instants, while `EncodedTime<S, F>` covers representations such as `JulianDate<scale::TT>`, `ModifiedJulianDate<scale::UTC>`, `UnixTime`, and `GpsTime`.
+- `include/tempoch/time.hpp`, `time_base.hpp`, `scales.hpp`, and `period.hpp` now expose the split scale/format API, including `TimeContext` for UT1 and historical UTC conversions.
+- `Period<T>` is now generalized across supported time representations through `TimeTraits`, with the default period type moved to `Period<ModifiedJulianDate<scale::TT>>`.
+- README, Doxygen docs, examples, and tests were migrated from implicit aliases (`UTC`, `JulianDate`, `MJD`, `TT`) to the explicit typed API and conversion flow.
+- Updated the vendored `tempoch` and `qtty-cpp` submodules to the snapshots used by this branch.
+
 ## [0.3.1] - 2026-05-11
 
 ### Fixed
