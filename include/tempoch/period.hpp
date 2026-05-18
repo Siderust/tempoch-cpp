@@ -17,7 +17,9 @@ template <typename S> struct TimeTraits<Time<S>> {
     return time.template to<format::MJD>().value();
   }
 
-  static Time<S> from_mjd_value(double mjd) { return ModifiedJulianDate<S>(mjd).to_time(); }
+  static Time<S> from_mjd_value(double mjd) {
+    return Time<S>::from_encoded(ModifiedJulianDate<S>(mjd));
+  }
 };
 
 template <typename S, typename F> struct TimeTraits<EncodedTime<S, F>> {
@@ -25,7 +27,7 @@ template <typename S, typename F> struct TimeTraits<EncodedTime<S, F>> {
     if constexpr (std::is_same_v<F, format::MJD>) {
       return time.value();
     } else {
-      return time.to_time().template to<format::MJD>().value();
+      return Time<S>::from_encoded(time).template to<format::MJD>().value();
     }
   }
 
@@ -44,7 +46,7 @@ template <> struct TimeTraits<CivilTime> {
   }
 
   static CivilTime from_mjd_value(double mjd) {
-    return ModifiedJulianDate<scale::UTC>(mjd).to_time().to_civil();
+    return Time<scale::UTC>::from_encoded(ModifiedJulianDate<scale::UTC>(mjd)).to_civil();
   }
 };
 

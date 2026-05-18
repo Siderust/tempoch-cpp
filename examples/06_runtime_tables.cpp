@@ -35,7 +35,7 @@ int main() {
 
   // ── Unix timestamp roundtrip ─────────────────────────────────────────────
   UnixTime ux{1'700'000'000.0};
-  auto utc_from_ux = ux.to_time().to_civil();
+  auto utc_from_ux = Time<scale::UTC>::from_encoded(ux).to_civil();
   auto back = Time<scale::UTC>::from_civil(utc_from_ux).to<format::Unix>();
 
   std::cout << std::fixed << std::setprecision(3);

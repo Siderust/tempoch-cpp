@@ -26,7 +26,7 @@ int main() {
 
   // Start from a Unix timestamp (mirrors UnixTime::try_new(1_700_000_000.25)).
   UnixTime ux{1'700'000'000.25};
-  auto utc = ux.to_time().to_civil();
+  auto utc = Time<scale::UTC>::from_encoded(ux).to_civil();
 
   // Convert across continuous scales.
   auto tai = ux.to<scale::TAI>();

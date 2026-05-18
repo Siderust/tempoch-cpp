@@ -176,6 +176,7 @@ endforeach()
 # Test executables with Google Test
 set(TEST_SOURCES
     tests/main.cpp
+    tests/test_headers.cpp
     tests/test_time.cpp
     tests/test_period.cpp
 )

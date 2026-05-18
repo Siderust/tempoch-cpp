@@ -26,18 +26,19 @@ time primitives. It wraps the Rust-based
 
 ```cpp
 #include <tempoch/tempoch.hpp>
+#include <tempoch/formats/jd.hpp>
+#include <tempoch/formats/mjd.hpp>
+#include <tempoch/scales/utc.hpp>
 #include <iostream>
 
 int main() {
     using namespace tempoch;
 
     CivilTime civil{2026, 7, 15, 22, 0, 0};
-    auto utc = Time<scale::UTC>::from_civil(civil);
-    auto tt = utc.to<scale::TT>();
-
-    auto jd_tt = tt.to<format::JD>();
+    auto jd_tt = JulianDate<scale::TT>::from_utc(civil);
+    auto mjd_tt = ModifiedJulianDate<scale::TT>::from_jd(jd_tt);
+    auto utc = Time<scale::TT>::from_encoded(jd_tt).to<scale::UTC>();
     auto jd_utc = utc.to<format::JD>();
-    auto mjd_tt = tt.to<format::MJD>();
 
     std::cout << "Civil UTC : " << civil << "\n";
     std::cout << "JD(TT)    : " << jd_tt << "\n";
@@ -76,17 +77,17 @@ int main() {
 ## Modules
 
 - `tempoch/tempoch.hpp` — umbrella include for the full public API
-- `tempoch/time.hpp` — `CivilTime`, `Time<scale::S>`, `JulianDate<scale::S>`, `ModifiedJulianDate<scale::S>`
+- `tempoch/scales/scales.hpp` — scale tag index header
+- `tempoch/formats/formats.hpp` — format tag index header
+- `tempoch/time.hpp` — `CivilTime`, TT-default `JulianDate` / `MJD`, explicit `Time<scale::S>`, and `TimeContext`
 - `tempoch/period.hpp` — `Period` interval type
 - `tempoch/ffi_core.hpp` — FFI helpers and exception hierarchy
 
 ## Migration Notes
 
-- Old `JulianDate` means `JulianDate<scale::TT>`.
-- Old `MJD` means `ModifiedJulianDate<scale::TT>`.
-- Old `TT` means `Time<scale::TT>`.
-- Old `UTC` civil construction is now `CivilTime` plus `Time<scale::UTC>::from_civil(...)`.
-- Legacy names are available only through opt-in compatibility headers.
+- Default astronomy-facing code should use TT-based `JulianDate`, `MJD`, and `Period`.
+- Civil construction is available directly through `JulianDate<scale::TT>::from_utc(...)` and `ModifiedJulianDate<scale::TT>::from_utc(...)`.
+- The explicit typed core remains available through `Time<scale::S>` and `EncodedTime<S, F>` for mixed-scale work.
 
 ---
 

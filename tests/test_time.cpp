@@ -12,9 +12,9 @@ TEST(Time, SplitRoundtripThroughFormats) {
   auto mjd = tt.to<format::MJD>();
   auto j2000 = tt.to<format::J2000s>();
 
-  auto jd_back = jd.to_time();
-  auto mjd_back = mjd.to_time();
-  auto j2000_back = j2000.to_time();
+  auto jd_back = Time<scale::TT>::from_encoded(jd);
+  auto mjd_back = Time<scale::TT>::from_encoded(mjd);
+  auto j2000_back = Time<scale::TT>::from_encoded(j2000);
 
   EXPECT_NEAR((jd_back - tt).value(), 0.0, 2e-5);
   EXPECT_NEAR((mjd_back - tt).value(), 0.0, 5e-7);
@@ -26,14 +26,14 @@ TEST(Time, UnixAndGpsRemainSecondFormats) {
   auto unix = utc.to<format::Unix>();
   EXPECT_NEAR(unix.value(), 9.43e-06, 1e-9);
 
-  auto unix_back = unix.to_time().to_civil();
+  auto unix_back = Time<scale::UTC>::from_encoded(unix).to_civil();
   EXPECT_EQ(unix_back.year, 1970);
   EXPECT_EQ(unix_back.month, 1);
   EXPECT_EQ(unix_back.day, 1);
 
   auto tai = utc.to<scale::TAI>();
   auto gps = tai.to<format::GPS>();
-  auto gps_back = gps.to_time();
+  auto gps_back = Time<scale::TAI>::from_encoded(gps);
   EXPECT_NEAR((gps_back - tai).value(), 0.0, 1e-9);
 }
 
@@ -69,7 +69,7 @@ TEST(Time, PreDefinitionUtcRequiresOptIn) {
 }
 
 TEST(Time, Ut1HorizonErrorsSurfaceThroughContextBackedConversion) {
-  auto far_future = JulianDate<scale::TT>(2'500'000.0).to_time();
+  auto far_future = Time<scale::TT>::from_encoded(JulianDate<scale::TT>(2'500'000.0));
   auto ctx = TimeContext::with_builtin_eop();
   EXPECT_THROW((far_future.to_with<scale::UT1>(ctx)), Ut1HorizonExceededError);
 }
@@ -81,4 +81,56 @@ TEST(Time, ArithmeticIsAffineAndSecondBased) {
 
   EXPECT_NEAR(diff.to<qtty::Second>().value(), 3600.0, 1e-9);
   EXPECT_NEAR(tt.split_seconds().first.value(), 10.0, 1e-12);
+}
+
+TEST(Time, TtJulianDateConvenienceUtcRoundtrip) {
+  auto jd = JulianDate<scale::TT>::from_utc({2026, 7, 15, 22, 0, 0});
+  auto utc = jd.to_utc();
+
+  EXPECT_EQ(utc.year, 2026);
+  EXPECT_EQ(utc.month, 7);
+  EXPECT_EQ(utc.day, 15);
+  EXPECT_NEAR(utc.hour, 22, 1);
+}
+
+TEST(Time, TtMjdConvenienceUtcRoundtrip) {
+  auto mjd = ModifiedJulianDate<scale::TT>::from_utc({2026, 7, 15, 22, 0, 0});
+  auto utc = mjd.to_utc();
+
+  EXPECT_EQ(utc.year, 2026);
+  EXPECT_EQ(utc.month, 7);
+  EXPECT_EQ(utc.day, 15);
+  EXPECT_NEAR(utc.hour, 22, 1);
+}
+
+TEST(Time, EncodedDateArithmeticSupportsAssignOperators) {
+  auto jd = JulianDate<scale::TT>::J2000();
+  jd += qtty::Hour(24.0);
+  jd -= qtty::Hour(12.0);
+
+  EXPECT_NEAR(jd.jd_value(), 2451545.5, 1e-10);
+
+  auto mjd = jd.to_mjd();
+  mjd += qtty::Minute(720.0);
+  EXPECT_NEAR(mjd.to_jd().jd_value(), 2451546.0, 1e-10);
+}
+
+TEST(Time, EncodedDateHelpersExposeExpectedValues) {
+  auto jd = JulianDate<scale::TT>::J2000();
+  auto next = jd + qtty::Day(36525.0);
+  auto mjd = ModifiedJulianDate<scale::TT>::from_jd(jd);
+
+  EXPECT_NEAR(jd.julian_centuries(), 0.0, 1e-12);
+  EXPECT_NEAR(next.julian_centuries(), 1.0, 1e-12);
+  EXPECT_NEAR(mjd.mjd_value(), jd.jd_value() - 2400000.5, 1e-12);
+  EXPECT_NEAR(JulianDate<scale::TT>::from_mjd(mjd).jd_value(), jd.jd_value(), 1e-12);
+}
+
+TEST(Time, EncodedDateMinMaxAndMeanRemainAvailable) {
+  auto a = JulianDate<scale::TT>::J2000();
+  auto b = a + qtty::Day(2.0);
+
+  EXPECT_EQ(a.min(b), a);
+  EXPECT_EQ(a.max(b), b);
+  EXPECT_NEAR(a.mean(b).jd_value(), a.jd_value() + 1.0, 1e-12);
 }

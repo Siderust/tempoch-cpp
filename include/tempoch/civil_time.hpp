@@ -4,8 +4,8 @@
  * @file civil_time.hpp
  * @brief UTC date-time breakdown struct.
  *
- * Forward-declared in scales.hpp and fully defined here to avoid circular
- * dependencies.
+ * Included by the public time headers and kept separate to avoid circular
+ * dependencies between the civil carrier and the scale/format tag headers.
  */
 
 #include "ffi_core.hpp"
