@@ -16,7 +16,7 @@ time primitives. It wraps the Rust-based
 | **`Time<scale::S>`** | Canonical instant on a physical timescale, stored as split J2000 seconds |
 | **`EncodedTime<S, F>`** | Typed external encoding such as `JulianDate<scale::TT>` or `ModifiedJulianDate<scale::UTC>` |
 | **`TimeContext`** | Explicit context for UT1 and historical UTC routes |
-| **`Period<T>`** | Inclusive `[start, end]` interval over any supported time representation |
+| **`Period<T>`** | Half-open `[start, end)` interval over any supported time representation |
 | **Exception hierarchy** | All FFI status codes map to typed C++ exceptions |
 | **Header-only** | Drop into any project — no separate compilation step |
 

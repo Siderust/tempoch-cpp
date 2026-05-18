@@ -33,7 +33,6 @@ TEST(TempochHeaderLayout, ExposesPerScaleAndFormatTraits) {
 
   static_assert(std::is_same_v<typename tempoch::FormatTraits<tempoch::format::JD>::quantity_type,
                                qtty::Day>);
-  static_assert(std::is_same_v<
-                typename tempoch::FormatTraits<tempoch::format::Unix>::quantity_type,
-                qtty::Second>);
+  static_assert(std::is_same_v<typename tempoch::FormatTraits<tempoch::format::Unix>::quantity_type,
+                               qtty::Second>);
 }

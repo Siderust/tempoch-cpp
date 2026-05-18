@@ -56,6 +56,10 @@ template <typename T = ModifiedJulianDate<scale::TT>> class Period {
   explicit Period(const tempoch_period_mjd_t &inner) : m_inner(inner) {}
 
 public:
+  /// Construct a half-open interval [start, end).
+  ///
+  /// The period is half-open: @p start is included, @p end is excluded.
+  /// @throws InvalidPeriodError if start > end.
   Period(const T &start, const T &end) {
     check_status(tempoch_period_mjd_new(TimeTraits<T>::to_mjd_value(start),
                                         TimeTraits<T>::to_mjd_value(end), &m_inner),
@@ -71,6 +75,12 @@ public:
   qtty::Quantity<typename qtty::ExtractTag<TargetType>::type> duration() const {
     auto qty = tempoch_period_mjd_duration_qty(m_inner);
     return qtty::Quantity<qtty::DayTag>(qty.value).template to<TargetType>();
+  }
+
+  /// Returns the length of the period (primary name; `duration()` is a backward-compat alias).
+  template <typename TargetType = qtty::DayTag>
+  qtty::Quantity<typename qtty::ExtractTag<TargetType>::type> length() const {
+    return duration<TargetType>();
   }
 
   Period intersection(const Period &other) const {
@@ -99,20 +109,17 @@ public:
   std::vector<Period<T>> complement_of(const std::vector<Period<T>> &others) const {
     std::vector<tempoch_period_mjd_t> raw;
     raw.reserve(others.size());
-    for (const auto &period : others)
-      raw.push_back(period.c_inner());
-
-    tempoch_period_mjd_t *out_ptr = nullptr;
-    std::size_t out_count = 0;
-    check_status(
-        tempoch_period_list_complement(m_inner, raw.data(), raw.size(), &out_ptr, &out_count),
-        "Period::complement_of");
-
+    for (const auto &p : others)
+      raw.push_back(p.c_inner());
+    tempoch_period_mjd_t *out = nullptr;
+    std::size_t n = 0;
+    check_status(tempoch_period_list_complement(m_inner, raw.data(), raw.size(), &out, &n),
+                 "Period::complement_of");
     std::vector<Period<T>> result;
-    result.reserve(out_count);
-    for (std::size_t i = 0; i < out_count; ++i)
-      result.push_back(from_c(out_ptr[i]));
-    tempoch_period_mjd_free(out_ptr, out_count);
+    result.reserve(n);
+    for (std::size_t i = 0; i < n; ++i)
+      result.push_back(from_c(out[i]));
+    tempoch_period_mjd_free(out, n);
     return result;
   }
 
@@ -124,86 +131,68 @@ template <typename T> Period(T, T) -> Period<T>;
 using TTMjdPeriod = Period<ModifiedJulianDate<scale::TT>>;
 using UTCPeriod = Period<CivilTime>;
 
-template <typename T> inline void validate_periods(const std::vector<Period<T>> &periods) {
+namespace detail {
+
+template <typename T>
+inline std::vector<tempoch_period_mjd_t> to_raw(const std::vector<Period<T>> &periods) {
   std::vector<tempoch_period_mjd_t> raw;
   raw.reserve(periods.size());
-  for (const auto &period : periods)
-    raw.push_back(period.c_inner());
+  for (const auto &p : periods)
+    raw.push_back(p.c_inner());
+  return raw;
+}
+
+template <typename T>
+inline std::vector<Period<T>> from_alloc(tempoch_period_mjd_t *ptr, std::size_t count) {
+  std::vector<Period<T>> result;
+  result.reserve(count);
+  for (std::size_t i = 0; i < count; ++i)
+    result.push_back(Period<T>::from_c(ptr[i]));
+  tempoch_period_mjd_free(ptr, count);
+  return result;
+}
+
+} // namespace detail
+
+template <typename T> inline void validate_periods(const std::vector<Period<T>> &periods) {
+  auto raw = detail::to_raw(periods);
   check_status(tempoch_period_list_validate(raw.data(), raw.size()), "validate_periods");
 }
 
 template <typename T>
 inline std::vector<Period<T>> intersect_periods(const std::vector<Period<T>> &a,
                                                 const std::vector<Period<T>> &b) {
-  std::vector<tempoch_period_mjd_t> ra, rb;
-  ra.reserve(a.size());
-  rb.reserve(b.size());
-  for (const auto &period : a)
-    ra.push_back(period.c_inner());
-  for (const auto &period : b)
-    rb.push_back(period.c_inner());
-
-  tempoch_period_mjd_t *out_ptr = nullptr;
-  std::size_t out_count = 0;
-  check_status(tempoch_period_list_intersect(ra.data(), ra.size(), rb.data(), rb.size(), &out_ptr,
-                                             &out_count),
+  auto ra = detail::to_raw(a), rb = detail::to_raw(b);
+  tempoch_period_mjd_t *out = nullptr;
+  std::size_t n = 0;
+  check_status(tempoch_period_list_intersect(ra.data(), ra.size(), rb.data(), rb.size(), &out, &n),
                "intersect_periods");
-
-  std::vector<Period<T>> result;
-  result.reserve(out_count);
-  for (std::size_t i = 0; i < out_count; ++i)
-    result.push_back(Period<T>::from_c(out_ptr[i]));
-  tempoch_period_mjd_free(out_ptr, out_count);
-  return result;
+  return detail::from_alloc<T>(out, n);
 }
 
 template <typename T>
 inline std::vector<Period<T>> union_periods(const std::vector<Period<T>> &a,
                                             const std::vector<Period<T>> &b) {
-  std::vector<tempoch_period_mjd_t> ra, rb;
-  ra.reserve(a.size());
-  rb.reserve(b.size());
-  for (const auto &period : a)
-    ra.push_back(period.c_inner());
-  for (const auto &period : b)
-    rb.push_back(period.c_inner());
-
-  tempoch_period_mjd_t *out_ptr = nullptr;
-  std::size_t out_count = 0;
-  check_status(
-      tempoch_period_list_union(ra.data(), ra.size(), rb.data(), rb.size(), &out_ptr, &out_count),
-      "union_periods");
-
-  std::vector<Period<T>> result;
-  result.reserve(out_count);
-  for (std::size_t i = 0; i < out_count; ++i)
-    result.push_back(Period<T>::from_c(out_ptr[i]));
-  tempoch_period_mjd_free(out_ptr, out_count);
-  return result;
+  auto ra = detail::to_raw(a), rb = detail::to_raw(b);
+  tempoch_period_mjd_t *out = nullptr;
+  std::size_t n = 0;
+  check_status(tempoch_period_list_union(ra.data(), ra.size(), rb.data(), rb.size(), &out, &n),
+               "union_periods");
+  return detail::from_alloc<T>(out, n);
 }
 
 template <typename T>
 inline std::vector<Period<T>> normalize_periods(const std::vector<Period<T>> &periods) {
-  std::vector<tempoch_period_mjd_t> raw;
-  raw.reserve(periods.size());
-  for (const auto &period : periods)
-    raw.push_back(period.c_inner());
-
-  tempoch_period_mjd_t *out_ptr = nullptr;
-  std::size_t out_count = 0;
-  check_status(tempoch_period_list_normalize(raw.data(), raw.size(), &out_ptr, &out_count),
+  auto raw = detail::to_raw(periods);
+  tempoch_period_mjd_t *out = nullptr;
+  std::size_t n = 0;
+  check_status(tempoch_period_list_normalize(raw.data(), raw.size(), &out, &n),
                "normalize_periods");
-
-  std::vector<Period<T>> result;
-  result.reserve(out_count);
-  for (std::size_t i = 0; i < out_count; ++i)
-    result.push_back(Period<T>::from_c(out_ptr[i]));
-  tempoch_period_mjd_free(out_ptr, out_count);
-  return result;
+  return detail::from_alloc<T>(out, n);
 }
 
 template <typename T> inline std::ostream &operator<<(std::ostream &os, const Period<T> &period) {
-  return os << '[' << period.start() << ", " << period.end() << ']';
+  return os << '[' << period.start() << ", " << period.end() << ')';
 }
 
 } // namespace tempoch
