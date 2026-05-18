@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(tempoch_cpp VERSION 0.4.0 LANGUAGES CXX)
+project(tempoch_cpp VERSION 0.5.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -176,6 +176,7 @@ endforeach()
 # Test executables with Google Test
 set(TEST_SOURCES
     tests/main.cpp
+    tests/test_headers.cpp
     tests/test_time.cpp
     tests/test_period.cpp
 )

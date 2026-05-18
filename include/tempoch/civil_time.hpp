@@ -4,8 +4,8 @@
  * @file civil_time.hpp
  * @brief UTC date-time breakdown struct.
  *
- * Forward-declared in scales.hpp and fully defined here to avoid circular
- * dependencies.
+ * Included by the public time headers and kept separate to avoid circular
+ * dependencies between the civil carrier and the scale/format tag headers.
  */
 
 #include "ffi_core.hpp"
@@ -31,7 +31,7 @@ struct CivilTime {
   uint8_t day;         ///< Day of month [1, 31].
   uint8_t hour;        ///< Hour [0, 23].
   uint8_t minute;      ///< Minute [0, 59].
-  uint8_t second;      ///< Second [0, 59].
+  uint8_t second;      ///< Second [0, 60] (60 only during a positive leap second).
   uint32_t nanosecond; ///< Nanosecond [0, 999 999 999].
 
   /// Default constructor: J2000 epoch noon-like civil representation.

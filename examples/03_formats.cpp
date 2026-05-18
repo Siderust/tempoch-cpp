@@ -17,34 +17,30 @@
 #include <iostream>
 #include <tempoch/tempoch.hpp>
 
-// Well-known fixed values (from tempoch-core::constats).
-static constexpr double UNIX_EPOCH_JD = 2'440'587.5; // 1970-01-01 JD
-static constexpr double UNIX_EPOCH_MJD = 40'587.0;   // 1970-01-01 MJD
-
 int main() {
   using namespace tempoch;
 
   // J2000 epoch as canonical TT, then viewed through encodings.
-  auto j2000_tt = JulianDate<scale::TT>::J2000().to_time();
+  auto j2000_tt = Time<scale::TT>::from_encoded(JulianDate<scale::TT>::J2000());
 
   // Sample TT instant: J2000 + 123 456.789 s.
   auto sample_tt = j2000_tt + qtty::Second(123'456.789);
 
-  // J2000 from JulianDate constructor (mirrors JulianDate::<TT>::try_new(J2000_JD_TT)).
+  // J2000 from JD scalar (matches Rust example using `j2000_jd_tt()`).
   JulianDate<scale::TT> j2000_from_jd{constants::j2000_jd_tt()};
 
-  // Unix epoch from JD value.
-  JulianDate<scale::TT> unix_epoch_jd{UNIX_EPOCH_JD};
+  // Unix epoch from JD value (ABI-stable constants wrapper).
+  JulianDate<scale::TT> unix_epoch_jd{constants::unix_epoch_jd()};
 
   // Half-day after J2000 via JD.
   JulianDate<scale::TT> half_day_jd{constants::j2000_jd_tt() + 0.5};
 
   // Unix epoch from MJD value.
-  ModifiedJulianDate<scale::TT> unix_epoch_mjd{UNIX_EPOCH_MJD};
+  ModifiedJulianDate<scale::TT> unix_epoch_mjd{constants::unix_epoch_mjd()};
 
   // Unix time from seconds (mirrors UnixTime::try_new(Second::new(1_700_000_000.25))).
   UnixTime ux{1'700'000'000.25};
-  auto utc_from_ux = ux.to_time().to_civil();
+  auto utc_from_ux = Time<scale::UTC>::from_encoded(ux).to_civil();
 
   std::cout << std::fixed << std::setprecision(9);
   std::cout << "J2000 TT JD       : " << j2000_tt.to<format::JD>() << "\n";

@@ -51,29 +51,34 @@ git submodule update --init --recursive
 #include <iostream>
 #include <qtty/qtty.hpp>
 #include <tempoch/tempoch.hpp>
+#include <tempoch/formats/jd.hpp>
+#include <tempoch/formats/mjd.hpp>
+#include <tempoch/scales/utc.hpp>
 
 int main() {
     using namespace tempoch;
 
     CivilTime civil{2026, 7, 15, 22, 0, 0};
-    auto utc = Time<scale::UTC>::from_civil(civil);
-    auto tt = utc.to<scale::TT>();
-
-    auto jd_tt = tt.to<format::JD>();
+    auto jd_tt = JulianDate<scale::TT>::from_utc(civil);
+    auto mjd_tt = ModifiedJulianDate<scale::TT>::from_jd(jd_tt);
+    auto utc = Time<scale::TT>::from_encoded(jd_tt).to<scale::UTC>();
     auto jd_utc = utc.to<format::JD>();
-    auto mjd_tt = tt.to<format::MJD>();
 
     std::cout << "Civil UTC : " << civil << "\n";
     std::cout << "JD(TT)    : " << jd_tt << "\n";
     std::cout << "JD(UTC)   : " << jd_utc << "\n";
     std::cout << "MJD(TT)   : " << mjd_tt << "\n";
 
-    Period<ModifiedJulianDate<scale::TT>> observing_window(
-        mjd_tt,
-        mjd_tt + qtty::Hour(12.0));
+    Period observing_window(mjd_tt, mjd_tt + qtty::Hour(12.0));
     std::cout << "Duration: " << observing_window.duration<qtty::Hour>() << "\n";
 }
 ```
+
+The public headers are now split by concept:
+
+- `tempoch/scales/*.hpp` for physical/civil time-axis tags and scale traits
+- `tempoch/formats/*.hpp` for encoding tags and format traits
+- `tempoch/tempoch.hpp` as the full umbrella include
 
 ### Durations and Arithmetic
 
@@ -87,13 +92,11 @@ auto dt = jd1 - jd0;
 std::cout << dt.to<qtty::Hour>() << "\n";
 ```
 
-## Migration Notes
+## API Notes
 
-- Old `JulianDate` means `JulianDate<scale::TT>`.
-- Old `MJD` means `ModifiedJulianDate<scale::TT>`.
-- Old `TT` means `Time<scale::TT>`, not a JD-valued wrapper.
-- Old `UTC` civil construction is now `CivilTime` plus `Time<scale::UTC>::from_civil(...)`.
-- Legacy names remain available only through opt-in shim headers such as `tempoch/legacy_time.hpp`.
+- Default astronomy-facing code should use TT-based `JulianDate`, `MJD`, and `Period`.
+- Civil construction is available directly through `JulianDate<scale::TT>::from_utc(...)` and `ModifiedJulianDate<scale::TT>::from_utc(...)`.
+- The explicit typed core remains available through `Time<scale::S>` and `EncodedTime<S, F>` for mixed-scale work.
 
 ## Documentation
 

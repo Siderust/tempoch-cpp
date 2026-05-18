@@ -25,7 +25,7 @@ int main() {
   auto ctx = TimeContext::with_builtin_eop();
 
   auto jd_tt = JulianDate<scale::TT>::J2000();
-  auto tt = jd_tt.to_time();
+  auto tt = Time<scale::TT>::from_encoded(jd_tt);
   auto tai = tt.to<scale::TAI>();
   auto utc = tt.to<scale::UTC>().to_civil();
   auto ut1 = tt.to_with<scale::UT1>(ctx);

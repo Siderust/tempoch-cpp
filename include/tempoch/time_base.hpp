@@ -7,7 +7,8 @@
 
 #include "civil_time.hpp"
 #include "ffi_core.hpp"
-#include "scales.hpp"
+#include "formats/formats.hpp"
+#include "scales/scales.hpp"
 #include <cmath>
 #include <memory>
 #include <optional>
@@ -161,6 +162,17 @@ public:
 
   static Time from_raw_j2000_seconds(qtty::Second seconds) { return from_split_seconds(seconds); }
 
+  /// Decode a scalar encoding @p Fmt into canonical split storage on scale @p S (default context).
+  template <typename Fmt> static Time from_encoded(const EncodedTime<S, Fmt> &encoded) {
+    return Time(detail::decode_time<S, Fmt>(encoded.value(), nullptr));
+  }
+
+  /// Decode using explicit UTC / UT1 policy from @p ctx when required by format @p Fmt.
+  template <typename Fmt>
+  static Time from_encoded_with(const EncodedTime<S, Fmt> &encoded, const TimeContext &ctx) {
+    return Time(detail::decode_time<S, Fmt>(encoded.value(), ctx.get()));
+  }
+
   std::pair<qtty::Second, qtty::Second> split_seconds() const noexcept {
     return {qtty::Second(raw_.hi_seconds), qtty::Second(raw_.lo_seconds)};
   }
@@ -248,6 +260,16 @@ public:
 
   template <typename Q> Time operator-(const Q &delta) const { return *this + Q(-delta.value()); }
 
+  template <typename Q> Time &operator+=(const Q &delta) {
+    raw_ = detail::add_seconds(raw_, delta);
+    return *this;
+  }
+
+  template <typename Q> Time &operator-=(const Q &delta) {
+    raw_ = detail::add_seconds(raw_, Q(-delta.value()));
+    return *this;
+  }
+
   qtty::Second operator-(const Time &other) const {
     return detail::difference_seconds(raw_, other.raw_);
   }
@@ -302,7 +324,10 @@ public:
     return EncodedTime(raw);
   }
 
-  static EncodedTime from_raw_unchecked(quantity_type raw) { return EncodedTime(raw); }
+  /// Construct directly from a quantity, validating that the value is finite.
+  ///
+  /// Unlike `try_new`, this throws `TempochException` on non-finite input.
+  static EncodedTime from_raw(quantity_type raw) { return EncodedTime(raw); }
 
   quantity_type raw() const noexcept { return raw_; }
   quantity_type quantity() const noexcept { return raw_; }
@@ -313,30 +338,24 @@ public:
     return EncodedTime(tempoch_const_j2000_jd_tt());
   }
 
-  Time<S> to_time() const { return Time<S>(detail::decode_time<S, F>(raw_.value(), nullptr)); }
-
-  Time<S> to_time_with(const TimeContext &ctx) const {
-    return Time<S>(detail::decode_time<S, F>(raw_.value(), ctx.get()));
-  }
-
   template <typename TargetScale, std::enable_if_t<is_scale_v<TargetScale>, int> = 0>
-  auto to() const -> decltype(this->to_time().template to<TargetScale>()) {
-    return to_time().template to<TargetScale>();
+  auto to() const {
+    return Time<S>::from_encoded(*this).template to<TargetScale>();
   }
 
   template <typename TargetScale, std::enable_if_t<is_scale_v<TargetScale>, int> = 0>
   Time<TargetScale> to_with(const TimeContext &ctx) const {
-    return to_time_with(ctx).template to_with<TargetScale>(ctx);
+    return Time<S>::from_encoded_with(*this, ctx).template to_with<TargetScale>(ctx);
   }
 
   template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
   EncodedTime<S, TargetFormat> to() const {
-    return to_time().template to<TargetFormat>();
+    return Time<S>::from_encoded(*this).template to<TargetFormat>();
   }
 
   template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
   EncodedTime<S, TargetFormat> to_with(const TimeContext &ctx) const {
-    return to_time_with(ctx).template to_with<TargetFormat>(ctx);
+    return Time<S>::from_encoded_with(*this, ctx).template to_with<TargetFormat>(ctx);
   }
 
   template <typename TargetScale, std::enable_if_t<is_scale_v<TargetScale>, int> = 0>
@@ -358,15 +377,26 @@ public:
   }
 
   template <typename Q> EncodedTime operator+(const Q &delta) const {
-    return (to_time() + delta).template to<F>();
+    return (Time<S>::from_encoded(*this) + delta).template to<F>();
   }
 
   template <typename Q> EncodedTime operator-(const Q &delta) const {
-    return (to_time() - delta).template to<F>();
+    return (Time<S>::from_encoded(*this) - delta).template to<F>();
+  }
+
+  template <typename Q> EncodedTime &operator+=(const Q &delta) {
+    *this = *this + delta;
+    return *this;
+  }
+
+  template <typename Q> EncodedTime &operator-=(const Q &delta) {
+    *this = *this - delta;
+    return *this;
   }
 
   quantity_type operator-(const EncodedTime &other) const {
-    return (to_time() - other.to_time()).template to<quantity_type>();
+    return (Time<S>::from_encoded(*this) - Time<S>::from_encoded(other))
+        .template to<quantity_type>();
   }
 
   bool operator==(const EncodedTime &other) const noexcept { return raw_ == other.raw_; }
@@ -375,6 +405,77 @@ public:
   bool operator<=(const EncodedTime &other) const noexcept { return raw_ <= other.raw_; }
   bool operator>(const EncodedTime &other) const noexcept { return raw_ > other.raw_; }
   bool operator>=(const EncodedTime &other) const noexcept { return raw_ >= other.raw_; }
+
+  EncodedTime min(const EncodedTime &other) const noexcept {
+    return *this <= other ? *this : other;
+  }
+  EncodedTime max(const EncodedTime &other) const noexcept {
+    return *this >= other ? *this : other;
+  }
+
+  EncodedTime mean(const EncodedTime &other) const {
+    return EncodedTime(quantity_type((raw_.value() + other.raw_.value()) * 0.5));
+  }
+
+  template <typename U = F, std::enable_if_t<std::is_same_v<U, format::JD>, int> = 0>
+  double jd_value() const noexcept {
+    return raw_.value();
+  }
+
+  template <typename U = F, std::enable_if_t<std::is_same_v<U, format::MJD>, int> = 0>
+  double mjd_value() const noexcept {
+    return raw_.value();
+  }
+
+  template <typename U = F, std::enable_if_t<std::is_same_v<U, format::JD>, int> = 0>
+  qtty::JulianCentury julian_centuries_qty() const noexcept {
+    return qtty::JulianCentury((raw_.value() - 2451545.0) / 36525.0);
+  }
+
+  template <typename U = F, std::enable_if_t<std::is_same_v<U, format::JD>, int> = 0>
+  double julian_centuries() const noexcept {
+    return julian_centuries_qty().value();
+  }
+
+  template <typename U = F, std::enable_if_t<std::is_same_v<U, format::JD>, int> = 0>
+  EncodedTime<S, format::MJD> to_mjd() const {
+    return this->template to<format::MJD>();
+  }
+
+  template <typename U = F, std::enable_if_t<std::is_same_v<U, format::MJD>, int> = 0>
+  EncodedTime<S, format::JD> to_jd() const {
+    return this->template to<format::JD>();
+  }
+
+  template <typename U = F, std::enable_if_t<std::is_same_v<U, format::JD>, int> = 0>
+  static EncodedTime from_mjd(const EncodedTime<S, format::MJD> &mjd) {
+    return mjd.template to<format::JD>();
+  }
+
+  template <typename U = F, std::enable_if_t<std::is_same_v<U, format::MJD>, int> = 0>
+  static EncodedTime from_jd(const EncodedTime<S, format::JD> &jd) {
+    return jd.template to<format::MJD>();
+  }
+
+  template <typename U = S, std::enable_if_t<std::is_same_v<U, scale::TT>, int> = 0>
+  static EncodedTime from_utc(const CivilTime &civil) {
+    return Time<scale::UTC>::from_civil(civil).template to<scale::TT>().template to<F>();
+  }
+
+  template <typename U = S, std::enable_if_t<std::is_same_v<U, scale::TT>, int> = 0>
+  static EncodedTime from_utc(const CivilTime &civil, const TimeContext &ctx) {
+    return Time<scale::UTC>::from_civil(civil, ctx).template to<scale::TT>().template to<F>();
+  }
+
+  template <typename U = S, std::enable_if_t<std::is_same_v<U, scale::TT>, int> = 0>
+  CivilTime to_utc() const {
+    return Time<S>::from_encoded(*this).template to<scale::UTC>().to_civil();
+  }
+
+  template <typename U = S, std::enable_if_t<std::is_same_v<U, scale::TT>, int> = 0>
+  CivilTime to_utc(const TimeContext &ctx) const {
+    return Time<S>::from_encoded_with(*this, ctx).template to<scale::UTC>().to_civil(ctx);
+  }
 };
 
 template <typename S, typename F>

@@ -19,6 +19,12 @@ namespace constants {
 /// J2000.0 epoch as a Julian Date in TT (2 451 545.0).
 inline double j2000_jd_tt() noexcept { return tempoch_const_j2000_jd_tt(); }
 
+/// Unix epoch as Julian Date on the UTC axis (`1970-01-01` midnight UTC).
+inline double unix_epoch_jd() noexcept { return tempoch_const_unix_epoch_jd(); }
+
+/// Unix epoch as Modified Julian Day on the UTC axis (`40 587.0`).
+inline double unix_epoch_mjd() noexcept { return tempoch_const_unix_epoch_mjd(); }
+
 /// Length of a Julian year in days (365.25 days).
 inline double julian_year_days() noexcept { return tempoch_const_julian_year_days(); }
 
