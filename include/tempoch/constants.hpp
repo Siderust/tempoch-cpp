@@ -61,5 +61,35 @@ inline double modern_delta_t_observed_end_mjd() noexcept {
   return tempoch_const_modern_delta_t_observed_end_mjd();
 }
 
+/// Constant TT − TAI offset in seconds (32.184 s).
+inline double tt_minus_tai_seconds() noexcept { return tempoch_const_tt_minus_tai_seconds(); }
+
+/// Number of nanoseconds in one SI second (1e9).
+inline double nanos_per_second() noexcept { return tempoch_const_nanos_per_second(); }
+
+/// IAU time-scale epoch T0 as a Julian Date on the TT axis (1977-01-01 TAI).
+inline double iau_time_epoch_t0_jd() noexcept { return tempoch_const_iau_time_epoch_t0_jd(); }
+
+/// First JD(TT) of the high-accuracy TDB−TT model validity window.
+inline double tdb_tt_model_high_accuracy_start_jd() noexcept {
+  return tempoch_const_tdb_tt_model_high_accuracy_start_jd();
+}
+
+/// Last JD(TT) of the high-accuracy TDB−TT model validity window.
+inline double tdb_tt_model_high_accuracy_end_jd() noexcept {
+  return tempoch_const_tdb_tt_model_high_accuracy_end_jd();
+}
+
 } // namespace constants
+
+/// ΔT = TT − UT1 in seconds for a UT1 Julian Day, using the compiled USNO
+/// model. Returns NaN when the requested epoch is outside the model domain.
+inline double delta_t_seconds(double jd_ut1) noexcept { return tempoch_delta_t_seconds(jd_ut1); }
+
+/// ΔT = TT − UT1 in seconds for a UT1 Julian Day, extrapolating beyond the
+/// tabulated range with the long-term parabola (always finite).
+inline double delta_t_seconds_extrapolated(double jd_ut1) noexcept {
+  return tempoch_delta_t_seconds_extrapolated(jd_ut1);
+}
+
 } // namespace tempoch

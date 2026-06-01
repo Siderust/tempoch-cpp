@@ -33,9 +33,11 @@
  */
 
 #include "constants.hpp"
+#include "data_status.hpp"
 #include "eop.hpp"
 #include "ffi_core.hpp"
 #include "formats/formats.hpp"
+#include "gnss_week.hpp"
 #include "period.hpp"
 #include "scales/scales.hpp"
 #include "time.hpp"
