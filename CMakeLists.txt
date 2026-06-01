@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(tempoch_cpp VERSION 0.5.0 LANGUAGES CXX)
+project(tempoch_cpp VERSION 0.5.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -162,6 +162,8 @@ foreach(_ex
     04_periods      # Period list operations: complement, intersect, normalize
     06_runtime_tables # EOP table access, UT1 conversion, constants
     07_conversions  # Full chain: Unix → UTC → TAI → TT → TDB / UT1 / GPS
+    08_gnss_scales  # GNSS and SPICE-compatibility scales (GPST, GST, QZSST, BDT, ET)
+    09_gnss_week    # GNSS week-number decomposition (GnssWeek)
 )
     add_executable(${_ex} examples/${_ex}.cpp)
     target_link_libraries(${_ex} PRIVATE tempoch_cpp)
@@ -179,6 +181,10 @@ set(TEST_SOURCES
     tests/test_headers.cpp
     tests/test_time.cpp
     tests/test_period.cpp
+    tests/test_new_scales.cpp
+    tests/test_constants.cpp
+    tests/test_data_status.cpp
+    tests/test_gnss_week.cpp
 )
 
 add_executable(test_tempoch ${TEST_SOURCES})
