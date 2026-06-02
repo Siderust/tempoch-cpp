@@ -480,7 +480,7 @@ public:
 
 template <typename S, typename F>
 inline std::ostream &operator<<(std::ostream &os, const EncodedTime<S, F> &time) {
-  return os << time.value();
+  return os << ScaleTraits<S>::name() << ' ' << FormatTraits<F>::name() << ' ' << time.raw();
 }
 
 } // namespace tempoch
