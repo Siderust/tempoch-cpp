@@ -224,6 +224,18 @@ public:
     return Time<TargetScale>(detail::scale_convert<S, TargetScale>(raw_, ctx.get()));
   }
 
+  template <typename TargetScale, typename TargetFormat,
+            std::enable_if_t<is_scale_v<TargetScale> && is_format_v<TargetFormat>, int> = 0>
+  EncodedTime<TargetScale, TargetFormat> to() const {
+    return to<TargetScale>().template to<TargetFormat>();
+  }
+
+  template <typename TargetScale, typename TargetFormat,
+            std::enable_if_t<is_scale_v<TargetScale> && is_format_v<TargetFormat>, int> = 0>
+  EncodedTime<TargetScale, TargetFormat> to_with(const TimeContext &ctx) const {
+    return to_with<TargetScale>(ctx).template to_with<TargetFormat>(ctx);
+  }
+
   template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
   EncodedTime<S, TargetFormat> to() const {
     return EncodedTime<S, TargetFormat>(detail::quantity_from_raw<TargetFormat>(
@@ -343,9 +355,21 @@ public:
     return Time<S>::from_encoded(*this).template to<TargetScale>();
   }
 
+  template <typename TargetScale, typename TargetFormat,
+            std::enable_if_t<is_scale_v<TargetScale> && is_format_v<TargetFormat>, int> = 0>
+  EncodedTime<TargetScale, TargetFormat> to() const {
+    return Time<S>::from_encoded(*this).template to<TargetScale, TargetFormat>();
+  }
+
   template <typename TargetScale, std::enable_if_t<is_scale_v<TargetScale>, int> = 0>
   Time<TargetScale> to_with(const TimeContext &ctx) const {
     return Time<S>::from_encoded_with(*this, ctx).template to_with<TargetScale>(ctx);
+  }
+
+  template <typename TargetScale, typename TargetFormat,
+            std::enable_if_t<is_scale_v<TargetScale> && is_format_v<TargetFormat>, int> = 0>
+  EncodedTime<TargetScale, TargetFormat> to_with(const TimeContext &ctx) const {
+    return Time<S>::from_encoded_with(*this, ctx).template to_with<TargetScale, TargetFormat>(ctx);
   }
 
   template <typename TargetFormat, std::enable_if_t<is_format_v<TargetFormat>, int> = 0>
