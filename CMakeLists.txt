@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(tempoch_cpp VERSION 0.5.3 LANGUAGES CXX)
+project(tempoch_cpp VERSION 0.5.4 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -164,6 +164,7 @@ foreach(_ex
     07_conversions  # Full chain: Unix → UTC → TAI → TT → TDB / UT1 / GPS
     08_gnss_scales  # GNSS and SPICE-compatibility scales (GPST, GST, QZSST, BDT, ET)
     09_gnss_week    # GNSS week-number decomposition (GnssWeek)
+    10_transformations # Transform times and periods by format, scale, or both
 )
     add_executable(${_ex} examples/${_ex}.cpp)
     target_link_libraries(${_ex} PRIVATE tempoch_cpp)
