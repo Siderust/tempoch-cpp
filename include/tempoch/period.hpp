@@ -50,6 +50,45 @@ template <> struct TimeTraits<CivilTime> {
   }
 };
 
+namespace detail {
+
+template <typename Target, typename T> auto convert_period_endpoint(const T &value) {
+  if constexpr (std::is_same_v<std::decay_t<T>, CivilTime>) {
+    return Time<scale::UTC>::from_civil(value).template to<Target>();
+  } else {
+    return value.template to<Target>();
+  }
+}
+
+template <typename TargetA, typename TargetB, typename T>
+auto convert_period_endpoint(const T &value) {
+  if constexpr (std::is_same_v<std::decay_t<T>, CivilTime>) {
+    return Time<scale::UTC>::from_civil(value).template to<TargetA, TargetB>();
+  } else {
+    return value.template to<TargetA, TargetB>();
+  }
+}
+
+template <typename Target, typename T>
+auto convert_period_endpoint_with(const T &value, const TimeContext &ctx) {
+  if constexpr (std::is_same_v<std::decay_t<T>, CivilTime>) {
+    return Time<scale::UTC>::from_civil(value, ctx).template to_with<Target>(ctx);
+  } else {
+    return value.template to_with<Target>(ctx);
+  }
+}
+
+template <typename TargetA, typename TargetB, typename T>
+auto convert_period_endpoint_with(const T &value, const TimeContext &ctx) {
+  if constexpr (std::is_same_v<std::decay_t<T>, CivilTime>) {
+    return Time<scale::UTC>::from_civil(value, ctx).template to_with<TargetA, TargetB>(ctx);
+  } else {
+    return value.template to_with<TargetA, TargetB>(ctx);
+  }
+}
+
+} // namespace detail
+
 template <typename T = ModifiedJulianDate<scale::TT>> class Period {
   tempoch_period_mjd_t m_inner;
 
@@ -70,6 +109,34 @@ public:
 
   T start() const { return TimeTraits<T>::from_mjd_value(m_inner.start_mjd); }
   T end() const { return TimeTraits<T>::from_mjd_value(m_inner.end_mjd); }
+
+  template <typename Target> auto to() const {
+    auto converted_start = detail::convert_period_endpoint<Target>(start());
+    auto converted_end = detail::convert_period_endpoint<Target>(end());
+    using OutT = std::decay_t<decltype(converted_start)>;
+    return Period<OutT>(converted_start, converted_end);
+  }
+
+  template <typename TargetA, typename TargetB> auto to() const {
+    auto converted_start = detail::convert_period_endpoint<TargetA, TargetB>(start());
+    auto converted_end = detail::convert_period_endpoint<TargetA, TargetB>(end());
+    using OutT = std::decay_t<decltype(converted_start)>;
+    return Period<OutT>(converted_start, converted_end);
+  }
+
+  template <typename Target> auto to_with(const TimeContext &ctx) const {
+    auto converted_start = detail::convert_period_endpoint_with<Target>(start(), ctx);
+    auto converted_end = detail::convert_period_endpoint_with<Target>(end(), ctx);
+    using OutT = std::decay_t<decltype(converted_start)>;
+    return Period<OutT>(converted_start, converted_end);
+  }
+
+  template <typename TargetA, typename TargetB> auto to_with(const TimeContext &ctx) const {
+    auto converted_start = detail::convert_period_endpoint_with<TargetA, TargetB>(start(), ctx);
+    auto converted_end = detail::convert_period_endpoint_with<TargetA, TargetB>(end(), ctx);
+    using OutT = std::decay_t<decltype(converted_start)>;
+    return Period<OutT>(converted_start, converted_end);
+  }
 
   template <typename TargetType = qtty::DayTag>
   qtty::Quantity<typename qtty::ExtractTag<TargetType>::type> duration() const {

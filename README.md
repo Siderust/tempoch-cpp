@@ -74,6 +74,27 @@ int main() {
 }
 ```
 
+Typed periods can be converted directly between scales and formats by applying
+the same conversion to both endpoints:
+
+```cpp
+using namespace tempoch;
+
+Period<EncodedTime<scale::UTC, format::JD>> window(
+    EncodedTime<scale::UTC, format::JD>(2460000.0),
+    EncodedTime<scale::UTC, format::JD>(2460001.0)
+);
+
+auto tt_mjd_window = window.to<scale::TT, format::MJD>();
+
+UTCPeriod civil_window(
+    CivilTime(2026, 1, 1),
+    CivilTime(2026, 1, 2)
+);
+
+auto civil_tt_mjd_window = civil_window.to<scale::TT, format::MJD>();
+```
+
 The public headers are now split by concept:
 
 - `tempoch/scales/*.hpp` for physical/civil time-axis tags and scale traits
@@ -103,6 +124,7 @@ std::cout << dt.to<qtty::Hour>() << "\n";
 - `docs/mainpage.md` (API overview)
 - `examples/01_quickstart.cpp` (civil UTC -> canonical time -> explicit encodings)
 - `examples/02_scales.cpp` (all supported scale conversions)
+- `examples/10_transformations.cpp` (scale-only, format-only, and combined conversions)
 - `include/tempoch/tempoch.hpp` (umbrella public header)
 
 ## Integration

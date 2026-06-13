@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2026-06-13
+
+### Added
+
+- Added `Period<T>::to<TargetScale>()`, `Period<T>::to<TargetFormat>()`, and
+  `Period<T>::to<TargetScale, TargetFormat>()` so typed periods can be
+  converted directly by applying the same conversion to both endpoints.
+- Added `Period<T>::to_with<...>(ctx)` overloads for context-backed conversion
+  routes such as UT1.
+- Added `Period<CivilTime>` conversion support by treating civil endpoints as
+  UTC before converting to typed scales and formats.
+- Added `examples/10_transformations.cpp`, showing scale-only, format-only,
+  combined scale/format, context-backed UT1, and period transformations.
+
 ## [0.5.3] - 2026-06-06
 
 ### Added
